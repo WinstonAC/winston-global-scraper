@@ -1,0 +1,16 @@
+{
+    "name": "winston-global-scraper",
+    "version": "1.0.0",
+    "description": "Scrapes Google for orgs and mentors using Puppeteer. Winston-themed UI. Outputs to CSV.",
+    "main": "api/scrape.js",
+    "scripts": {
+        "dev": "node api/scrape.js"
+    },
+    "type": "module",
+    "dependencies": {
+        "cors": "^2.8.5",
+        "csv-writer": "^1.6.0",
+        "express": "^4.18.2",
+        "puppeteer": "^21.3.8"
+    }
+}
