@@ -4,7 +4,10 @@
     "description": "Scrapes Google for orgs and mentors using Puppeteer. Winston-themed UI. Outputs to CSV.",
     "main": "api/scrape.js",
     "scripts": {
-        "dev": "node api/scrape.js"
+        "dev":   "node api/scrape.js",
+        "start": "node api/scrape.js",
+        "lint":  "eslint . --ext .js",
+        "test":  "jest"
     },
     "type": "module",
     "dependencies": {

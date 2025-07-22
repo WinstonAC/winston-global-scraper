@@ -1,67 +1,146 @@
 <!DOCTYPE html>
-<html lang="en" class="bg-neutral-900 text-neutral-100 min-h-screen">
+<html lang="en" class="h-full bg-neutral-900 text-white">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Winston AI Scraper</title>
-    <link rel="icon" href="https://em-content.zobj.net/source/microsoft-teams/337/globe-showing-europe-africa_1f30d.png" />
-    <!-- Tailwind CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://unpkg.com/tailwindcss@3.4.1/dist/tailwind.min.css'">
+    <title>Winston Scraper</title>
+
+    <!-- Tailwind (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Inter font -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
+
     <style>
-      body { font-family: 'Inter', 'system-ui', 'sans-serif'; }
+      body { font-family: 'Inter', sans-serif; }
+      .gradient-bg {
+        background: radial-gradient(110% 140% at 50% 0%,
+          rgba(33,33,55,1) 0%,
+          rgba(10,10,25,1) 60%,
+          rgba(0,0,0,1) 100%);
+      }
     </style>
   </head>
-  <body class="flex items-center justify-center min-h-screen p-4 bg-neutral-900">
-    <div class="w-full max-w-xl mx-auto bg-neutral-950 rounded-2xl shadow-2xl p-8 flex flex-col gap-10 border border-neutral-800">
-      <!-- Headline -->
-      <h1 class="text-5xl font-extrabold text-center tracking-tight select-none mb-2">
-        <span class="text-[#22c55e]">🌍 Winston</span> AI Scraper
-      </h1>
-      <!-- Subtitle / Helper Text -->
-      <p class="text-center text-neutral-400 text-base mb-4">
-        Enter a search keyword to scrape Google results. Export your findings as a CSV for your team or workflow.
-      </p>
-      <!-- Search Form -->
-      <form id="scrape-form" class="flex flex-col gap-4">
-        <input
-          id="keyword"
-          name="keyword"
-          type="text"
-          required
-          placeholder="Enter search keyword..."
-          class="w-full text-lg px-5 py-3 rounded-xl bg-neutral-800 border-2 border-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#22c55e] placeholder-neutral-500"
-        />
-        <button
-          id="scrape-btn"
-          type="submit"
-          class="w-full font-bold text-lg py-3 rounded-xl bg-[#22c55e] hover:bg-green-400 transition-colors text-neutral-900 shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
-        >
-          <span id="start-btn-spinner" class="hidden animate-spin h-5 w-5 border-2 border-t-transparent border-white rounded-full"></span>
-          <span>Start Scraping</span>
-        </button>
-      </form>
-      <!-- Loading Message -->
-      <div id="loading" class="hidden text-center text-[#22c55e] font-mono text-base animate-pulse">Scraping in progress...</div>
-      <!-- Error Message -->
-      <div id="error" class="hidden text-center text-red-500 font-bold bg-red-900/30 rounded-lg py-2"></div>
-      <!-- Results Table -->
-      <div id="results-section" class="overflow-x-auto">
-        <table id="results-table" class="min-w-full table-auto border-separate border-spacing-y-2 rounded-xl overflow-hidden">
-          <thead class="sticky top-0 z-10 bg-neutral-900">
-            <tr>
-              <th class="px-6 py-3 text-left font-bold text-[#22c55e] bg-neutral-900 rounded-tl-lg">Title</th>
-              <th class="px-6 py-3 text-left font-bold text-[#22c55e] bg-neutral-900">URL</th>
-              <th class="px-6 py-3 text-left font-bold text-[#22c55e] bg-neutral-900 rounded-tr-lg">Name</th>
-            </tr>
-          </thead>
-          <tbody id="results-body"></tbody>
-        </table>
-        <!-- Download CSV Button -->
-        <button id="download-btn" class="hidden mt-6 w-full font-bold text-lg py-3 rounded-xl bg-[#22c55e] hover:bg-green-400 transition-colors text-neutral-900 shadow-lg" type="button">
-          Download CSV
-        </button>
+
+  <body class="flex flex-col min-h-full">
+    <!-- Top nav -->
+    <nav class="w-full bg-gray-900/90 backdrop-blur sticky top-0 z-10">
+      <div class="mx-auto max-w-7xl flex items-center justify-between px-6 h-14">
+        <span class="text-lime-400 font-bold tracking-widest">WINSTON AI</span>
+        <!-- GitHub link removed for customer-facing UI -->
       </div>
-    </div>
-    <script src="main.js"></script>
+    </nav>
+
+    <!-- Hero / Scraper form -->
+    <header class="flex-1 flex items-center justify-center py-20">
+      <div
+        class="gradient-bg rounded-3xl shadow-2xl max-w-4xl w-full px-10 py-16 text-center"
+      >
+        <h1 class="text-5xl md:text-6xl font-extrabold mb-6">
+          AI-Powered Web Scraper
+        </h1>
+        <p class="text-gray-300 max-w-xl mx-auto mb-10">
+          Fetch contact data from any URL in seconds—stealth mode included.
+        </p>
+
+        <!-- URL input -->
+        <div
+          class="flex flex-col sm:flex-row gap-4 items-center justify-center mb-12"
+        >
+          <input
+            id="urlInput"
+            type="url"
+            required
+            placeholder="https://example.com"
+            class="w-full sm:w-96 px-4 py-2 rounded-lg bg-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lime-400"
+          />
+          <button
+            id="scrapeBtn"
+            class="bg-lime-500 hover:bg-lime-400 text-gray-900 font-semibold px-6 py-2 rounded-lg transition disabled:opacity-50"
+          >
+            Scrape
+          </button>
+        </div>
+
+        <!-- Results -->
+        <section
+          id="resultsWrapper"
+          class="hidden text-left max-w-3xl mx-auto"
+        >
+          <h2 class="text-2xl font-bold mb-4">Contacts</h2>
+          <pre
+            id="resultsBox"
+            class="bg-gray-900/70 border border-gray-700 rounded-xl p-4 overflow-x-auto text-sm"
+          ></pre>
+        </section>
+
+        <!-- Loader -->
+        <div id="loader" class="hidden mt-6">
+          <svg
+            class="animate-spin h-8 w-8 text-lime-400 mx-auto"
+            xmlns="http://www.w3.org/2000/svg"
+            fill="none"
+            viewBox="0 0 24 24"
+          >
+            <circle
+              class="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              stroke-width="4"
+            ></circle>
+            <path
+              class="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+            ></path>
+          </svg>
+        </div>
+      </div>
+    </header>
+
+    <script>
+      const urlInput = document.getElementById('urlInput');
+      const scrapeBtn = document.getElementById('scrapeBtn');
+      const loader = document.getElementById('loader');
+      const resultsWrapper = document.getElementById('resultsWrapper');
+      const resultsBox = document.getElementById('resultsBox');
+
+      async function scrape() {
+        const url = urlInput.value.trim();
+        if (!url) return;
+
+        scrapeBtn.disabled = true;
+        loader.classList.remove('hidden');
+        resultsWrapper.classList.add('hidden');
+        resultsBox.textContent = '';
+
+        try {
+          const res = await fetch(`/api/scrape?url=${encodeURIComponent(url)}`);
+          const data = await res.json();
+
+          if (!res.ok) {
+            throw new Error(data.error || 'Scrape failed');
+          }
+
+          resultsBox.textContent = JSON.stringify(data, null, 2);
+          resultsWrapper.classList.remove('hidden');
+        } catch (err) {
+          alert(err.message);
+        } finally {
+          loader.classList.add('hidden');
+          scrapeBtn.disabled = false;
+        }
+      }
+
+      scrapeBtn.addEventListener('click', scrape);
+      urlInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') scrape();
+      });
+    </script>
   </body>
 </html> 
