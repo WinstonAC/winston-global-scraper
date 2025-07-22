@@ -3,15 +3,24 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Winston Global Scraper</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet">
+    <title>Winston AI Scraper</title>
+    <link rel="icon" href="https://em-content.zobj.net/source/microsoft-teams/337/globe-showing-europe-africa_1f30d.png" />
+    <!-- Tailwind CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.4.1/dist/tailwind.min.css" rel="stylesheet" onerror="this.onerror=null;this.href='https://unpkg.com/tailwindcss@3.4.1/dist/tailwind.min.css'">
+    <style>
+      body { font-family: 'Inter', 'system-ui', 'sans-serif'; }
+    </style>
   </head>
-  <body class="flex items-center justify-center min-h-screen p-4">
-    <div class="w-full max-w-xl mx-auto bg-neutral-950 rounded-lg shadow-lg p-6 flex flex-col gap-8 border-2 border-neutral-800">
-      <!-- Title -->
-      <h1 class="text-3xl font-extrabold text-center tracking-tight select-none">
-        🌍 Winston Global Scraper
+  <body class="flex items-center justify-center min-h-screen p-4 bg-neutral-900">
+    <div class="w-full max-w-xl mx-auto bg-neutral-950 rounded-2xl shadow-2xl p-8 flex flex-col gap-10 border border-neutral-800">
+      <!-- Headline -->
+      <h1 class="text-5xl font-extrabold text-center tracking-tight select-none mb-2">
+        <span class="text-[#22c55e]">🌍 Winston</span> AI Scraper
       </h1>
+      <!-- Subtitle / Helper Text -->
+      <p class="text-center text-neutral-400 text-base mb-4">
+        Enter a search keyword to scrape Google results. Export your findings as a CSV for your team or workflow.
+      </p>
       <!-- Search Form -->
       <form id="scrape-form" class="flex flex-col gap-4">
         <input
@@ -20,89 +29,39 @@
           type="text"
           required
           placeholder="Enter search keyword..."
-          class="w-full text-lg px-5 py-3 rounded-lg bg-neutral-800 border-2 border-neutral-700 focus:outline-none focus:border-neutral-400 placeholder-neutral-500"
+          class="w-full text-lg px-5 py-3 rounded-xl bg-neutral-800 border-2 border-neutral-700 focus:outline-none focus:ring-2 focus:ring-[#22c55e] placeholder-neutral-500"
         />
         <button
+          id="scrape-btn"
           type="submit"
-          class="w-full font-bold text-lg py-3 rounded-lg bg-neutral-800 hover:bg-neutral-700 transition-colors border-2 border-neutral-700 text-neutral-100 shadow-sm"
+          class="w-full font-bold text-lg py-3 rounded-xl bg-[#22c55e] hover:bg-green-400 transition-colors text-neutral-900 shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          Start Scraping
+          <span id="start-btn-spinner" class="hidden animate-spin h-5 w-5 border-2 border-t-transparent border-white rounded-full"></span>
+          <span>Start Scraping</span>
         </button>
       </form>
       <!-- Loading Message -->
-      <div id="loading" class="hidden text-center text-neutral-400 font-mono text-base">Scraping in progress...</div>
+      <div id="loading" class="hidden text-center text-[#22c55e] font-mono text-base animate-pulse">Scraping in progress...</div>
+      <!-- Error Message -->
+      <div id="error" class="hidden text-center text-red-500 font-bold bg-red-900/30 rounded-lg py-2"></div>
       <!-- Results Table -->
       <div id="results-section" class="overflow-x-auto">
-        <table id="results-table" class="min-w-full table-auto border-separate border-spacing-y-2">
-          <thead>
+        <table id="results-table" class="min-w-full table-auto border-separate border-spacing-y-2 rounded-xl overflow-hidden">
+          <thead class="sticky top-0 z-10 bg-neutral-900">
             <tr>
-              <th class="px-4 py-2 text-left font-bold text-neutral-200 bg-neutral-900 rounded-tl-lg">Title</th>
-              <th class="px-4 py-2 text-left font-bold text-neutral-200 bg-neutral-900 rounded-tr-lg">URL</th>
+              <th class="px-6 py-3 text-left font-bold text-[#22c55e] bg-neutral-900 rounded-tl-lg">Title</th>
+              <th class="px-6 py-3 text-left font-bold text-[#22c55e] bg-neutral-900">URL</th>
+              <th class="px-6 py-3 text-left font-bold text-[#22c55e] bg-neutral-900 rounded-tr-lg">Name</th>
             </tr>
           </thead>
-          <tbody id="results-body">
-            <!-- Results will be injected here -->
-          </tbody>
+          <tbody id="results-body"></tbody>
         </table>
+        <!-- Download CSV Button -->
+        <button id="download-btn" class="hidden mt-6 w-full font-bold text-lg py-3 rounded-xl bg-[#22c55e] hover:bg-green-400 transition-colors text-neutral-900 shadow-lg" type="button">
+          Download CSV
+        </button>
       </div>
     </div>
-    <script>
-      // Minimal JS for demo: handles form, loading, and table rendering
-      const form = document.getElementById('scrape-form');
-      const loading = document.getElementById('loading');
-      const resultsSection = document.getElementById('results-section');
-      const resultsBody = document.getElementById('results-body');
-
-      // Add error message element
-      let errorMsg = document.createElement('div');
-      errorMsg.id = 'error-message';
-      errorMsg.className = 'hidden text-center text-red-500 font-bold mb-2';
-      form.parentNode.insertBefore(errorMsg, form.nextSibling);
-
-      resultsSection.style.display = 'none';
-
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        errorMsg.classList.add('hidden');
-        loading.classList.remove('hidden');
-        resultsSection.style.display = 'none';
-        resultsBody.innerHTML = '';
-        const keyword = document.getElementById('keyword').value;
-        try {
-          const response = await fetch('http://localhost:3000/api/scrape', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ keyword }),
-          });
-          if (!response.ok) {
-            throw new Error('Scraping failed.');
-          }
-          const data = await response.json();
-          loading.classList.add('hidden');
-          resultsSection.style.display = '';
-          resultsBody.innerHTML = '';
-          if (Array.isArray(data.results) && data.results.length > 0) {
-            data.results.forEach(r => {
-              const row = document.createElement('tr');
-              row.innerHTML = `
-                <td class='px-4 py-2 bg-neutral-800 rounded-l-lg'>${r.title}</td>
-                <td class='px-4 py-2 bg-neutral-800 rounded-r-lg'><a href='${r.url}' class='underline text-blue-400 hover:text-blue-200' target='_blank' rel='noopener'>${r.url}</a></td>
-              `;
-              resultsBody.appendChild(row);
-            });
-          } else {
-            const row = document.createElement('tr');
-            row.innerHTML = `<td colspan='2' class='px-4 py-2 text-center text-neutral-400 bg-neutral-800 rounded-lg'>No results found.</td>`;
-            resultsBody.appendChild(row);
-          }
-        } catch (err) {
-          loading.classList.add('hidden');
-          errorMsg.textContent = err.message || 'An error occurred.';
-          errorMsg.classList.remove('hidden');
-        }
-      });
-    </script>
+    <script src="main.js"></script>
   </body>
 </html> 

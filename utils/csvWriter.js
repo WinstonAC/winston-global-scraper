@@ -1,23 +1,16 @@
-import fs from 'fs';
 import { createObjectCsvWriter } from 'csv-writer';
+import path from 'path';
 
-export async function writeToCSV(data, keyword = 'output') {
-  const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-  const filePath = `./public/${keyword}-${timestamp}.csv`;
-
+export async function writeCSV(data, keyword) {
+  const safeKeyword = keyword.replace(/[^a-z0-9]/gi, '_').toLowerCase();
+  const filePath = path.resolve(`results-${safeKeyword}.csv`);
   const csvWriter = createObjectCsvWriter({
     path: filePath,
     header: [
       { id: 'title', title: 'Title' },
-      { id: 'url', title: 'URL' },
-      { id: 'tags', title: 'Tags' },
-    ],
+      { id: 'url', title: 'URL' }
+    ]
   });
-
-  try {
-    await csvWriter.writeRecords(data);
-    console.log(`✅ CSV saved: ${filePath}`);
-  } catch (err) {
-    console.error('❌ Failed to write CSV:', err);
-  }
+  await csvWriter.writeRecords(data);
+  return filePath;
 }
