@@ -245,30 +245,40 @@
             const wrapper = document.createElement('div');
             wrapper.className = 'max-h-[400px] overflow-y-auto rounded-xl border border-slate-700/40 shadow-inner';
             const table = document.createElement('table');
-            table.className = 'w-full table-fixed';
+            table.className = 'w-full';
             table.innerHTML = `
               <thead class="text-left font-semibold border-b">
                 <tr>
-                  <th class="w-56 truncate px-3 py-2">Name</th>
-                  <th class="w-40 truncate px-3 py-2">Hostname</th>
-                  <th class="w-72 truncate px-3 py-2">URL</th>
-                  <th class="w-56 truncate px-3 py-2">Emails</th>
-                  <th class="w-40 truncate px-3 py-2">Phones</th>
-                  <th class="w-48 truncate px-3 py-2">Tags</th>
+                  <th class="px-2 py-2 sm:px-3">Name</th>
+                  <th class="hidden sm:table-cell px-3 py-2">Company</th>
+                  <th class="hidden md:table-cell px-3 py-2">URL</th>
+                  <th class="px-2 py-2 sm:px-3">Email</th>
+                  <th class="hidden sm:table-cell px-3 py-2">Phone</th>
+                  <th class="hidden lg:table-cell px-3 py-2">Tags</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-slate-600/50 even:bg-slate-50/5">
+              <tbody class="divide-y divide-slate-600/50">
               ${rows.map(r => {
                 let hostname = '';
-                try { hostname = new URL(r.url).hostname; } catch {}
+                try { hostname = new URL(r.url).hostname.replace(/^www\./, ''); } catch {}
+                const firstEmail = (r.emails || '').split(';')[0] || '';
+                const firstPhone = (r.phones || '').split(';')[0] || '';
                 return `
-                  <tr>
-                    <td class="w-56 truncate px-3 py-2" title="${r.contact || ''}">${r.contact || ''}</td>
-                    <td class="w-40 truncate px-3 py-2" title="${hostname}">${hostname}</td>
-                    <td class="w-72 truncate px-3 py-2 break-all" title="${r.url || ''}"><a href="${r.url}" target="_blank" class="underline text-blue-600">${r.url}</a></td>
-                    <td class="w-56 truncate px-3 py-2" title="${r.emails || ''}">${r.emails || ''}</td>
-                    <td class="w-40 truncate px-3 py-2" title="${r.phones || ''}">${r.phones || ''}</td>
-                    <td class="w-48 truncate px-3 py-2" title="${r.tags || ''}">${r.tags || ''}</td>
+                  <tr class="hover:bg-slate-50/5">
+                    <td class="px-2 py-2 sm:px-3 max-w-0 w-full">
+                      <div class="truncate font-medium" title="${r.contact || ''}">${r.contact || 'Unknown'}</div>
+                      <div class="text-xs text-gray-400 sm:hidden truncate" title="${hostname}">${hostname}</div>
+                    </td>
+                    <td class="hidden sm:table-cell px-3 py-2 truncate" title="${hostname}">${hostname}</td>
+                    <td class="hidden md:table-cell px-3 py-2 max-w-xs">
+                      <a href="${r.url}" target="_blank" class="text-blue-400 hover:text-blue-300 truncate block" title="${r.url || ''}">${r.url}</a>
+                    </td>
+                    <td class="px-2 py-2 sm:px-3 max-w-0">
+                      <div class="truncate text-sm" title="${firstEmail}">${firstEmail}</div>
+                      <div class="text-xs text-gray-400 sm:hidden truncate" title="${firstPhone}">${firstPhone}</div>
+                    </td>
+                    <td class="hidden sm:table-cell px-3 py-2 truncate text-sm" title="${firstPhone}">${firstPhone}</td>
+                    <td class="hidden lg:table-cell px-3 py-2 truncate text-xs" title="${r.tags || ''}">${r.tags || ''}</td>
                   </tr>`;
               }).join('')}
               </tbody>`;
@@ -452,15 +462,17 @@
       }
 
       // ---- EMAIL COLUMN VISIBILITY TOGGLE ----
-      const emailColIndex = 3;           // Name=0, Hostname=1, URL=2, Emails=3
       function toggleEmailColumn(show) {
         document
           .querySelectorAll('#resultsWrapper table')
           .forEach(tbl => {
-            tbl.querySelectorAll('tr').forEach(row => {
-              const cell = row.children[emailColIndex];
-              if (cell) cell.style.display = show ? '' : 'none';
-            });
+            // Toggle email header (4th column: Name=0, Company=1, URL=2, Email=3)
+            const emailHeaders = tbl.querySelectorAll('thead th:nth-child(4)');
+            emailHeaders.forEach(th => th.style.display = show ? '' : 'none');
+            
+            // Toggle email cells in all rows
+            const emailCells = tbl.querySelectorAll('tbody td:nth-child(4)');
+            emailCells.forEach(td => td.style.display = show ? '' : 'none');
           });
       }
       const emailToggle = document.getElementById('emailToggle');
