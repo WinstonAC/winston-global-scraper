@@ -325,35 +325,9 @@
       sheetsBtn.addEventListener('click', async () => {
         console.log('Google Sheets button clicked, lastCsvId:', lastCsvId);
         
-        if (lastCsvId) {
-          try {
-            const response = await fetch(`/api/sheets/${lastCsvId}`);
-            if (response.ok) {
-              const data = await response.json();
-              if (data.success) {
-                // Copy CSV data to clipboard
-                await navigator.clipboard.writeText(data.csvData);
-                
-                // Open new Google Sheets
-                window.open('https://docs.google.com/spreadsheets/create', '_blank');
-                
-                // Show instructions
-                alert('CSV data copied to clipboard! Paste it into the new Google Sheet using Ctrl+V (or Cmd+V on Mac)');
-                exportMenu.classList.add('hidden');
-                return;
-              }
-            }
-            throw new Error('Server sheets export failed');
-          } catch (error) {
-            console.log('Server sheets export failed, using fallback:', error.message);
-            // Fallback to client-side generation
-            generateClientSideSheetsExport();
-          }
-        } else {
-          console.log('No csvId, using client-side sheets export');
-          // Fallback: client-side CSV generation for Google Sheets
-          generateClientSideSheetsExport();
-        }
+        // Always use client-side generation for consistency (server files don't persist anyway)
+        generateClientSideSheetsExport();
+        
         exportMenu.classList.add('hidden');
       });
 
@@ -380,18 +354,42 @@
           return;
         }
         
-        // First open the Google Sheets tab
-        const sheetsWindow = window.open('https://docs.google.com/spreadsheets/create', '_blank');
+        console.log('Attempting to open Google Sheets and copy data');
         
-        // Then copy to clipboard
+        // Copy to clipboard first
         navigator.clipboard.writeText(csvData).then(() => {
-          // Give focus to the new tab if possible
+          console.log('Data copied to clipboard successfully');
+          
+          // Try to open Google Sheets
+          const sheetsWindow = window.open('https://docs.google.com/spreadsheets/create', '_blank');
+          
           if (sheetsWindow) {
-            sheetsWindow.focus();
+            console.log('Google Sheets window opened successfully');
+            // Small delay then focus
+            setTimeout(() => {
+              try {
+                sheetsWindow.focus();
+              } catch (e) {
+                console.log('Could not focus new window:', e);
+              }
+            }, 100);
+            
+            alert('✅ Success! CSV data copied to clipboard and Google Sheets opened. \n\n📋 Paste the data using Ctrl+V (or Cmd+V on Mac) in the new sheet.');
+          } else {
+            console.log('Failed to open Google Sheets - likely blocked by popup blocker');
+            alert('📋 CSV data copied to clipboard! \n\n❌ Could not auto-open Google Sheets (popup blocked). \n\n✅ Please manually open: https://docs.google.com/spreadsheets/create \n\nThen paste with Ctrl+V (or Cmd+V on Mac)');
           }
-          alert('CSV data copied to clipboard! A new Google Sheet has opened. Paste the data using Ctrl+V (or Cmd+V on Mac)');
-        }).catch(() => {
-          alert('Failed to copy data to clipboard. New Google Sheet opened - you can manually copy the data.');
+        }).catch((error) => {
+          console.log('Failed to copy to clipboard:', error);
+          
+          // Still try to open Google Sheets even if clipboard fails
+          const sheetsWindow = window.open('https://docs.google.com/spreadsheets/create', '_blank');
+          
+          if (sheetsWindow) {
+            alert('❌ Could not copy to clipboard automatically. \n\n✅ Google Sheets opened - you can manually copy and paste the data from the results table.');
+          } else {
+            alert('❌ Could not copy to clipboard or open Google Sheets (popup blocked). \n\n✅ Please manually open: https://docs.google.com/spreadsheets/create \n\nThen copy data from the results table.');
+          }
         });
       }
 
