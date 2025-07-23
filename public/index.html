@@ -178,28 +178,38 @@
 
           resultsBox.innerHTML = '';
           if (rows && rows.length) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'max-h-[400px] overflow-y-auto rounded-xl border border-slate-700/40 shadow-inner';
             const table = document.createElement('table');
-            table.className = 'min-w-full text-sm';
+            table.className = 'w-full table-fixed';
             table.innerHTML = `
               <thead class="text-left font-semibold border-b">
-                <tr><th>Name</th><th>Hostname</th><th>URL</th><th>Emails</th><th>Phones</th><th>Tags</th></tr>
+                <tr>
+                  <th class="w-56 truncate px-3 py-2">Name</th>
+                  <th class="w-40 truncate px-3 py-2">Hostname</th>
+                  <th class="w-72 truncate px-3 py-2">URL</th>
+                  <th class="w-56 truncate px-3 py-2">Emails</th>
+                  <th class="w-40 truncate px-3 py-2">Phones</th>
+                  <th class="w-48 truncate px-3 py-2">Tags</th>
+                </tr>
               </thead>
-              <tbody>
+              <tbody class="divide-y divide-slate-600/50 even:bg-slate-50/5">
               ${rows.map(r => {
                 let hostname = '';
                 try { hostname = new URL(r.url).hostname; } catch {}
                 return `
-                  <tr class="border-t">
-                    <td>${r.title || ''}</td>
-                    <td>${hostname}</td>
-                    <td class="break-all"><a href="${r.url}" target="_blank" class="underline text-blue-600">${r.url}</a></td>
-                    <td>${r.emails || ''}</td>
-                    <td>${r.phones || ''}</td>
-                    <td>${r.tags || ''}</td>
+                  <tr>
+                    <td class="w-56 truncate px-3 py-2" title="${r.contact || ''}">${r.contact || ''}</td>
+                    <td class="w-40 truncate px-3 py-2" title="${hostname}">${hostname}</td>
+                    <td class="w-72 truncate px-3 py-2 break-all" title="${r.url || ''}"><a href="${r.url}" target="_blank" class="underline text-blue-600">${r.url}</a></td>
+                    <td class="w-56 truncate px-3 py-2" title="${r.emails || ''}">${r.emails || ''}</td>
+                    <td class="w-40 truncate px-3 py-2" title="${r.phones || ''}">${r.phones || ''}</td>
+                    <td class="w-48 truncate px-3 py-2" title="${r.tags || ''}">${r.tags || ''}</td>
                   </tr>`;
               }).join('')}
               </tbody>`;
-            resultsBox.appendChild(table);
+            wrapper.appendChild(table);
+            resultsBox.appendChild(wrapper);
           }
           resultsWrapper.classList.remove('hidden');
           if (data.csvId) {

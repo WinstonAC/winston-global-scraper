@@ -5,6 +5,7 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import cheerio from 'cheerio';
 
 const router = express.Router();
 puppeteer.use(StealthPlugin());
@@ -33,12 +34,31 @@ async function bingFallback(keyword) {
 }
 
 // Helper to find contact name near email
-function findContactName(html, email) {
-  const idx = html.indexOf(email);
-  if (idx === -1) return '';
-  const snippet = html.slice(Math.max(0, idx - 80), idx);
-  const match = snippet.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})$/);
-  return match ? match[1].trim() : '';
+export function findContactName($, firstEmail, targetUrl) {
+  let name = '';
+  if (firstEmail) {
+    // Find the first occurrence of the email in the HTML
+    const emailNode = $(`*:contains('${firstEmail}')`).first();
+    let prevText = [];
+    let node = emailNode[0];
+    let count = 0;
+    // Traverse up to 30 previous text nodes
+    while (node && count < 30) {
+      node = node.prev;
+      if (node && node.type === 'text' && node.data) {
+        prevText.unshift(node.data.trim());
+        count++;
+      }
+    }
+    const context = prevText.join(' ');
+    const match = context.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,4})$/);
+    if (match) name = match[1].trim();
+  }
+  if (!name) {
+    name = $('meta[name="author"]').attr('content')?.trim();
+  }
+  if (!name) name = new URL(targetUrl).hostname.replace(/^www\./,'');
+  return name || '';
 }
 
 router.post('/', async (req, res) => {
@@ -74,25 +94,25 @@ router.post('/', async (req, res) => {
       try {
         const subPage = await browser.newPage();
         await subPage.goto(link.url, { waitUntil: 'domcontentloaded', timeout: 15000 });
-        const content = await subPage.content();
-        const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-        const phoneRegex = /\+?\d[\d\s().-]{7,}\d/g;
-        const emails = content.match(emailRegex) || [];
-        const phones = content.match(phoneRegex) || [];
+        const html = await subPage.content();
+        const $ = cheerio.load(html);
+        // Extract and clean emails
+        const rawEmails = html.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+        const emails = rawEmails.filter(e => /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(e));
+        // Extract and clean phones
+        const rawPhones = html.match(/\+?\d[\d\s().-]{7,}\d/g) || [];
+        const phones = rawPhones.map(p => p.replace(/\D/g, '')).filter(p => p.length >= 7 && p.length <= 15);
         // Tagging
-        const tags = tagRules.filter(t => t.re.test(link.title + ' ' + content)).map(t => t.tag);
+        const tags = tagRules.filter(t => t.re.test(link.title + ' ' + html)).map(t => t.tag);
         // Contact extraction
-        const contact = emails.length ? findContactName(content, emails[0]) : '';
-        let fallbackName = '';
-        try { fallbackName = new URL(link.url).hostname.replace(/^www\./, ''); } catch {}
-        const contactName = contact || fallbackName;
+        const contact = emails.length ? findContactName($, emails[0], link.url) : findContactName($, '', link.url);
         rows.push({
           title: link.title,
           url: link.url,
           emails: emails.join(';'),
           phones: phones.join(';'),
           tags: tags.join(';'),
-          contact: contactName
+          contact
         });
         await subPage.close();
       } catch (err) {

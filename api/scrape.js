@@ -7,6 +7,8 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import scrapeKeyword from './scrapeKeyword.js';
+import cheerio from 'cheerio';
+import { findContactName } from './scrapeKeyword.js';
 
 // ES module __dirname workaround
 const __filename = fileURLToPath(import.meta.url);
@@ -23,15 +25,6 @@ app.use(express.json());
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, '../public')));
-
-// Helper to find contact name near email
-function findContactName(html, email) {
-  const idx = html.indexOf(email);
-  if (idx === -1) return '';
-  const snippet = html.slice(Math.max(0, idx - 80), idx);
-  const match = snippet.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})$/);
-  return match ? match[1].trim() : '';
-}
 
 const tagRules = [
   { tag: "Women in STEM",        re: /women in stem/i },
@@ -73,22 +66,22 @@ app.post('/api/scrape', async (req, res) => {
     // Example: Scrape emails and phones (customize as needed)
     try {
       const pageContent = await page.content();
-      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
-      const phoneRegex = /\+?\d[\d\s().-]{7,}\d/g;
-      const emails = pageContent.match(emailRegex) || [];
-      const phones = pageContent.match(phoneRegex) || [];
+      const $ = cheerio.load(pageContent);
+      // Extract and clean emails
+      const rawEmails = pageContent.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
+      const emails = rawEmails.filter(e => /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(e));
+      // Extract and clean phones
+      const rawPhones = pageContent.match(/\+?\d[\d\s().-]{7,}\d/g) || [];
+      const phones = rawPhones.map(p => p.replace(/\D/g, '')).filter(p => p.length >= 7 && p.length <= 15);
       // Contact extraction
-      const contact = emails.length ? findContactName(pageContent, emails[0]) : '';
-      let fallbackName = '';
-      try { fallbackName = new URL(url).hostname.replace(/^www\./, ''); } catch {}
-      const contactName = contact || fallbackName;
+      const contact = emails.length ? findContactName($, emails[0], url) : findContactName($, '', url);
       // Tagging
       const tags = tagRules.filter(t => t.re.test(pageContent)).map(t => t.tag);
       contacts = [
         {
           emails: emails.join(';'),
           phones: phones.join(';'),
-          contact: contactName,
+          contact,
           tags: tags.join(';')
         }
       ];
