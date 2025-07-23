@@ -55,7 +55,7 @@
     <!-- Top nav -->
     <nav class="w-full bg-gray-900/90 backdrop-blur sticky top-0 z-10">
       <div class="mx-auto max-w-7xl flex items-center justify-between px-6 h-14">
-        <span class="text-lime-400 font-bold tracking-widest">WINSTON AI</span>
+        <button id="winstonLogo" class="text-lime-400 font-bold tracking-widest hover:text-lime-300 transition-colors cursor-pointer">WINSTON AI</button>
         <!-- GitHub link removed for customer-facing UI -->
       </div>
     </nav>
@@ -485,6 +485,39 @@
       emailToggle.addEventListener('change', () =>
         toggleEmailColumn(emailToggle.checked)
       );
+
+      // ---- WINSTON AI LOGO CLEAR/RESET FUNCTIONALITY ----
+      const winstonLogo = document.getElementById('winstonLogo');
+      winstonLogo.addEventListener('click', () => {
+        // Clear input field
+        urlInput.value = '';
+        
+        // Hide results and export
+        resultsWrapper.classList.add('hidden');
+        exportDropdown.classList.add('hidden');
+        exportMenu.classList.add('hidden');
+        
+        // Clear results content
+        resultsBox.innerHTML = '';
+        
+        // Reset button states
+        scrapeBtn.disabled = false;
+        loader.classList.add('hidden');
+        
+        // Clear stored data
+        lastCsvId = null;
+        currentRows = [];
+        serverCsvData = null;
+        
+        // Reset to keyword mode
+        document.querySelector('input[value="keyword"]').checked = true;
+        mode = 'keyword';
+        
+        // Focus on input for immediate use
+        urlInput.focus();
+        
+        console.log('Winston AI: Interface cleared and reset');
+      });
     </script>
   </body>
 </html> 
