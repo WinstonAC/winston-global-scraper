@@ -90,7 +90,12 @@ export default async function handler(req, res) {
       console.log(`[Scraper] CSV written to: ${csvFilename}`);
     }
     
-    return res.status(200).json({ success: true, contacts: result, csvId });
+    return res.status(200).json({ 
+      success: true, 
+      contacts: result, 
+      csvId,
+      csvData: csvId ? csv : null // Include CSV data if generated
+    });
   } catch (error) {
     console.error('[Scraper] Error:', error.message);
     clearTimeout(timeoutId);

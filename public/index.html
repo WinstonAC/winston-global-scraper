@@ -219,6 +219,7 @@
 
           resultsBox.innerHTML = '';
           currentRows = rows || []; // Store for client-side export
+          serverCsvData = data.csvData || null; // Store server CSV data
           if (rows && rows.length) {
             const wrapper = document.createElement('div');
             wrapper.className = 'max-h-[400px] overflow-y-auto rounded-xl border border-slate-700/40 shadow-inner';
@@ -285,9 +286,24 @@
       });
 
       // Export handlers
-      csvBtn.addEventListener('click', () => {
+      csvBtn.addEventListener('click', async () => {
         if (lastCsvId) {
-          window.location.href = `/api/download/${lastCsvId}`;
+          try {
+            // Try server download first
+            const response = await fetch(`/api/download/${lastCsvId}`);
+            if (response.ok) {
+              window.location.href = `/api/download/${lastCsvId}`;
+            } else {
+              throw new Error('Server download failed');
+            }
+          } catch {
+            // Fallback to client-side or server CSV data
+            if (serverCsvData) {
+              downloadCsvData(serverCsvData, lastCsvId);
+            } else {
+              generateClientSideCSV();
+            }
+          }
         } else {
           // Fallback: client-side CSV generation
           generateClientSideCSV();
@@ -295,11 +311,26 @@
         exportMenu.classList.add('hidden');
       });
 
-      xlsxBtn.addEventListener('click', () => {
+      xlsxBtn.addEventListener('click', async () => {
         if (lastCsvId) {
-          window.location.href = `/api/download/${lastCsvId}/xlsx`;
+          try {
+            // Try server XLSX download first
+            const response = await fetch(`/api/download/${lastCsvId}/xlsx`);
+            if (response.ok) {
+              window.location.href = `/api/download/${lastCsvId}/xlsx`;
+            } else {
+              throw new Error('Server XLSX download failed');
+            }
+          } catch {
+            // Fallback: client-side XLSX generation using server CSV data
+            if (serverCsvData) {
+              generateClientSideXLSX(serverCsvData, lastCsvId);
+            } else {
+              alert('XLSX export temporarily unavailable. Please use CSV download.');
+            }
+          }
         } else {
-          alert('XLSX export requires server-generated data. Please try again after scraping.');
+          alert('XLSX export requires scraped data. Please perform a search first.');
         }
         exportMenu.classList.add('hidden');
       });
@@ -308,23 +339,26 @@
         if (lastCsvId) {
           try {
             const response = await fetch(`/api/sheets/${lastCsvId}`);
-            const data = await response.json();
-            
-            if (data.success) {
-              // Copy CSV data to clipboard
-              await navigator.clipboard.writeText(data.csvData);
-              
-              // Open new Google Sheets
-              window.open('https://docs.google.com/spreadsheets/create', '_blank');
-              
-              // Show instructions
-              alert('CSV data copied to clipboard! Paste it into the new Google Sheet using Ctrl+V (or Cmd+V on Mac)');
-            } else {
-              alert('Failed to prepare Google Sheets data');
+            if (response.ok) {
+              const data = await response.json();
+              if (data.success) {
+                // Copy CSV data to clipboard
+                await navigator.clipboard.writeText(data.csvData);
+                
+                // Open new Google Sheets
+                window.open('https://docs.google.com/spreadsheets/create', '_blank');
+                
+                // Show instructions
+                alert('CSV data copied to clipboard! Paste it into the new Google Sheet using Ctrl+V (or Cmd+V on Mac)');
+                exportMenu.classList.add('hidden');
+                return;
+              }
             }
+            throw new Error('Server sheets export failed');
           } catch (error) {
             console.error('Sheets export error:', error);
-            alert('Failed to export to Google Sheets');
+            // Fallback to client-side generation
+            generateClientSideSheetsExport();
           }
         } else {
           // Fallback: client-side CSV generation for Google Sheets
@@ -335,48 +369,59 @@
 
       // Client-side CSV generation functions
       let currentRows = []; // Store current results for client-side export
+      let serverCsvData = null; // Store server-generated CSV data
 
       function generateClientSideCSV() {
-        if (!currentRows || currentRows.length === 0) {
+        const csvData = serverCsvData || generateCsvFromRows();
+        if (!csvData) {
           alert('No data to export');
           return;
         }
         
-        const csvHeader = 'Title,URL,Emails,Phones,Tags,Contact\n';
-        const csvRows = currentRows.map(r => 
-          `"${(r.title || '').replace(/"/g, '""')}","${r.url || ''}","${r.emails || ''}","${r.phones || ''}","${r.tags || ''}","${r.contact || ''}"`
-        ).join('\n');
-        const csv = csvHeader + csvRows;
+        downloadCsvData(csvData, `winston-results-${Date.now()}.csv`);
+      }
+
+      function generateClientSideSheetsExport() {
+        const csvData = serverCsvData || generateCsvFromRows();
+        if (!csvData) {
+          alert('No data to export');
+          return;
+        }
         
-        const blob = new Blob([csv], { type: 'text/csv' });
+        navigator.clipboard.writeText(csvData).then(() => {
+          window.open('https://docs.google.com/spreadsheets/create', '_blank');
+          alert('CSV data copied to clipboard! Paste it into the new Google Sheet using Ctrl+V (or Cmd+V on Mac)');
+        }).catch(() => {
+          alert('Failed to copy data to clipboard');
+        });
+      }
+
+      function downloadCsvData(csvData, filename) {
+        const blob = new Blob([csvData], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `winston-results-${Date.now()}.csv`;
+        a.download = filename || `winston-results-${Date.now()}.csv`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
       }
 
-      function generateClientSideSheetsExport() {
-        if (!currentRows || currentRows.length === 0) {
-          alert('No data to export');
-          return;
-        }
+      function generateClientSideXLSX(csvData, filename) {
+        // For now, fallback to CSV download with explanation
+        alert('XLSX generation is temporarily unavailable. Downloading as CSV instead.');
+        downloadCsvData(csvData, filename.replace('.csv', '_fallback.csv'));
+      }
+
+      function generateCsvFromRows() {
+        if (!currentRows || currentRows.length === 0) return null;
         
         const csvHeader = 'Title,URL,Emails,Phones,Tags,Contact\n';
         const csvRows = currentRows.map(r => 
           `"${(r.title || '').replace(/"/g, '""')}","${r.url || ''}","${r.emails || ''}","${r.phones || ''}","${r.tags || ''}","${r.contact || ''}"`
         ).join('\n');
-        const csv = csvHeader + csvRows;
-        
-        navigator.clipboard.writeText(csv).then(() => {
-          window.open('https://docs.google.com/spreadsheets/create', '_blank');
-          alert('CSV data copied to clipboard! Paste it into the new Google Sheet using Ctrl+V (or Cmd+V on Mac)');
-        }).catch(() => {
-          alert('Failed to copy data to clipboard');
-        });
+        return csvHeader + csvRows;
       }
 
       // ---- EMAIL COLUMN VISIBILITY TOGGLE ----

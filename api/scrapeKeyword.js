@@ -168,7 +168,13 @@ export default async function handler(req, res) {
     fs.writeFileSync(filename, csv);
     
     console.log(`[Keyword Scraper] Results written to: ${csvFilename} - Processed ${rows.length} results`);
-    res.status(200).json({ rows, csvId: csvFilename });
+    
+    // Also include the CSV data in the response for client-side download fallback
+    res.status(200).json({ 
+      rows, 
+      csvId: csvFilename,
+      csvData: csv // Include the actual CSV content
+    });
   } catch (error) {
     console.error('[Keyword Scraper] Unhandled error:', error.message || error);
     if (browser) { try { await browser.close(); } catch (e) {} }
