@@ -7,7 +7,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import scrapeKeyword from './scrapeKeyword.js';
-import cheerio from 'cheerio';
+import { load } from 'cheerio';
 import { findContactName } from './scrapeKeyword.js';
 
 // ES module __dirname workaround
@@ -66,7 +66,7 @@ app.post('/api/scrape', async (req, res) => {
     // Example: Scrape emails and phones (customize as needed)
     try {
       const pageContent = await page.content();
-      const $ = cheerio.load(pageContent);
+      const $ = load(pageContent);
       // Extract and clean emails
       const rawEmails = pageContent.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
       const emails = rawEmails.filter(e => /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(e));

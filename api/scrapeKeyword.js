@@ -5,7 +5,7 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import cheerio from 'cheerio';
+import { load } from 'cheerio';
 
 const router = express.Router();
 puppeteer.use(StealthPlugin());
@@ -95,7 +95,7 @@ router.post('/', async (req, res) => {
         const subPage = await browser.newPage();
         await subPage.goto(link.url, { waitUntil: 'domcontentloaded', timeout: 15000 });
         const html = await subPage.content();
-        const $ = cheerio.load(html);
+        const $ = load(html);
         // Extract and clean emails
         const rawEmails = html.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
         const emails = rawEmails.filter(e => /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(e));
