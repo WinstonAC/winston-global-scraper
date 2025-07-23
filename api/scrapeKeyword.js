@@ -51,10 +51,10 @@ router.post('/', async (req, res) => {
     await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
     const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(keyword)}`;
     await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('.result__a, .result__title a', { timeout: 10000 });
+    await page.waitForSelector('a[data-testid="result-title-a"]', { timeout: 10000 });
     // Scrape first 20 links
     const links = await page.evaluate(() => {
-      const anchors = Array.from(document.querySelectorAll('.result__a, .result__title a'));
+      const anchors = Array.from(document.querySelectorAll('a[data-testid="result-title-a"]'));
       return anchors.slice(0, 20).map(a => ({ title: a.innerText, url: a.href }));
     });
     for (const link of links) {

@@ -46,16 +46,25 @@
           Fetch contact data from any URL in seconds—stealth mode included.
         </p>
 
-        <!-- URL input -->
+        <div class="flex gap-4 mb-4 justify-center">
+          <label class="flex items-center gap-1">
+            <input type="radio" name="mode" value="keyword" checked />
+            Keyword
+          </label>
+          <label class="flex items-center gap-1">
+            <input type="radio" name="mode" value="url" />
+            Direct URL
+          </label>
+        </div>
         <div
           class="flex flex-col sm:flex-row gap-4 items-center justify-center mb-12"
         >
           <input
             id="urlInput"
-            type="url"
+            type="text"
             required
-            placeholder="https://example.com"
-            class="w-full sm:w-96 px-4 py-2 rounded-lg bg-gray-800 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-lime-400"
+            placeholder="Enter keyword or URL"
+            class="w-full sm:w-96 px-4 py-2 rounded-lg bg-white text-gray-900 border border-blue-400 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           <button
             id="scrapeBtn"
@@ -74,12 +83,12 @@
         <!-- Results -->
         <section
           id="resultsWrapper"
-          class="hidden text-left max-w-3xl mx-auto"
+          class="hidden bg-white text-gray-900 border border-blue-400 rounded-xl max-w-5xl mx-auto h-96 overflow-y-auto p-4"
         >
           <h2 class="text-2xl font-bold mb-4">Contacts</h2>
           <pre
             id="resultsBox"
-            class="bg-gray-900/70 border border-gray-700 rounded-xl p-4 overflow-x-auto text-sm"
+            class="bg-transparent border-0 p-0 overflow-x-auto text-sm"
           ></pre>
         </section>
 
@@ -117,10 +126,20 @@
       const resultsBox = document.getElementById('resultsBox');
       const downloadBtn = document.getElementById('downloadBtn');
       let lastCsvId = null;
+      let mode = 'keyword';
+      const modeRadios = document.getElementsByName('mode');
+      modeRadios.forEach(radio => {
+        radio.addEventListener('change', () => {
+          mode = document.querySelector('input[name="mode"]:checked').value;
+          urlInput.value = '';
+          resultsWrapper.classList.add('hidden');
+          downloadBtn.classList.add('hidden');
+        });
+      });
 
       async function scrape() {
-        const url = urlInput.value.trim();
-        if (!url) return;
+        const value = urlInput.value.trim();
+        if (!value) return;
 
         scrapeBtn.disabled = true;
         loader.classList.remove('hidden');
@@ -130,18 +149,54 @@
         lastCsvId = null;
 
         try {
-          const res = await fetch('/api/scrape', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url })
-          });
-          const data = await res.json();
+          let res, data, rows;
+          if (mode === 'keyword') {
+            res = await fetch('/api/scrapeKeyword', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ keyword: value })
+            });
+            data = await res.json();
+            rows = data.rows;
+          } else {
+            res = await fetch('/api/scrape', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ url: value })
+            });
+            data = await res.json();
+            rows = data.contacts;
+          }
 
           if (!res.ok) {
             throw new Error(data.error || 'Scrape failed');
           }
 
-          resultsBox.textContent = JSON.stringify(data.contacts, null, 2);
+          resultsBox.innerHTML = '';
+          if (rows && rows.length) {
+            const table = document.createElement('table');
+            table.className = 'min-w-full text-sm';
+            table.innerHTML = `
+              <thead class="text-left font-semibold border-b">
+                <tr><th>Name</th><th>Hostname</th><th>URL</th><th>Emails</th><th>Phones</th><th>Tags</th></tr>
+              </thead>
+              <tbody>
+              ${rows.map(r => {
+                let hostname = '';
+                try { hostname = new URL(r.url).hostname; } catch {}
+                return `
+                  <tr class="border-t">
+                    <td>${r.title || ''}</td>
+                    <td>${hostname}</td>
+                    <td class="break-all"><a href="${r.url}" target="_blank" class="underline text-blue-600">${r.url}</a></td>
+                    <td>${r.emails || ''}</td>
+                    <td>${r.phones || ''}</td>
+                    <td>${r.tags || ''}</td>
+                  </tr>`;
+              }).join('')}
+              </tbody>`;
+            resultsBox.appendChild(table);
+          }
           resultsWrapper.classList.remove('hidden');
           if (data.csvId) {
             lastCsvId = data.csvId;
