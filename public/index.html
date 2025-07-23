@@ -78,12 +78,37 @@
           >
             Scrape
           </button>
-          <button
-            id="downloadBtn"
-            class="bg-transparent border border-lime-400 px-4 py-2 rounded-lg hover:bg-lime-400 hover:text-gray-900 transition hidden"
-          >
-            Download CSV
-          </button>
+          <div id="exportDropdown" class="relative hidden">
+            <button
+              id="exportBtn"
+              class="bg-transparent border border-lime-400 px-4 py-2 rounded-lg hover:bg-lime-400 hover:text-gray-900 transition flex items-center gap-2"
+            >
+              Export Data
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd"></path>
+              </svg>
+            </button>
+            <div id="exportMenu" class="absolute right-0 mt-2 w-48 bg-white text-gray-900 rounded-lg shadow-lg border border-gray-200 hidden">
+              <button id="csvBtn" class="w-full text-left px-4 py-2 hover:bg-gray-100 rounded-t-lg flex items-center gap-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z"></path>
+                </svg>
+                Download CSV
+              </button>
+              <button id="xlsxBtn" class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm3 2h6v2H7V5zm0 4h6v2H7V9zm0 4h6v2H7v-2z"></path>
+                </svg>
+                Download XLSX
+              </button>
+              <button id="sheetsBtn" class="w-full text-left px-4 py-2 hover:bg-gray-100 rounded-b-lg flex items-center gap-2">
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"></path>
+                </svg>
+                Export to Sheets
+              </button>
+            </div>
+          </div>
         </div>
 
         <!-- Results -->
@@ -130,7 +155,12 @@
       const loader = document.getElementById('loader');
       const resultsWrapper = document.getElementById('resultsWrapper');
       const resultsBox = document.getElementById('resultsBox');
-      const downloadBtn = document.getElementById('downloadBtn');
+      const exportDropdown = document.getElementById('exportDropdown');
+      const exportBtn = document.getElementById('exportBtn');
+      const exportMenu = document.getElementById('exportMenu');
+      const csvBtn = document.getElementById('csvBtn');
+      const xlsxBtn = document.getElementById('xlsxBtn');
+      const sheetsBtn = document.getElementById('sheetsBtn');
       let lastCsvId = null;
       let mode = 'keyword';
       const modeRadios = document.getElementsByName('mode');
@@ -139,7 +169,7 @@
           mode = document.querySelector('input[name="mode"]:checked').value;
           urlInput.value = '';
           resultsWrapper.classList.add('hidden');
-          downloadBtn.classList.add('hidden');
+          exportDropdown.classList.add('hidden');
         });
       });
 
@@ -151,7 +181,8 @@
         loader.classList.remove('hidden');
         resultsWrapper.classList.add('hidden');
         resultsBox.textContent = '';
-        downloadBtn.classList.add('hidden');
+        exportDropdown.classList.add('hidden');
+        exportMenu.classList.add('hidden');
         lastCsvId = null;
 
         try {
@@ -187,6 +218,7 @@
           }
 
           resultsBox.innerHTML = '';
+          currentRows = rows || []; // Store for client-side export
           if (rows && rows.length) {
             const wrapper = document.createElement('div');
             wrapper.className = 'max-h-[400px] overflow-y-auto rounded-xl border border-slate-700/40 shadow-inner';
@@ -224,7 +256,10 @@
           resultsWrapper.classList.remove('hidden');
           if (data.csvId) {
             lastCsvId = data.csvId;
-            downloadBtn.classList.remove('hidden');
+            exportDropdown.classList.remove('hidden');
+          } else if (rows && rows.length > 0) {
+            // If we have results but no csvId, show export anyway for client-side CSV generation
+            exportDropdown.classList.remove('hidden');
           }
         } catch (err) {
           alert(err.message);
@@ -238,10 +273,111 @@
       urlInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') scrape();
       });
-      downloadBtn.addEventListener('click', () => {
-        if (!lastCsvId) return;
-        window.location.href = `/api/download/${lastCsvId}`;
+      // Export dropdown toggle
+      exportBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        exportMenu.classList.toggle('hidden');
       });
+
+      // Hide menu when clicking outside
+      document.addEventListener('click', () => {
+        exportMenu.classList.add('hidden');
+      });
+
+      // Export handlers
+      csvBtn.addEventListener('click', () => {
+        if (lastCsvId) {
+          window.location.href = `/api/download/${lastCsvId}`;
+        } else {
+          // Fallback: client-side CSV generation
+          generateClientSideCSV();
+        }
+        exportMenu.classList.add('hidden');
+      });
+
+      xlsxBtn.addEventListener('click', () => {
+        if (lastCsvId) {
+          window.location.href = `/api/download/${lastCsvId}/xlsx`;
+        } else {
+          alert('XLSX export requires server-generated data. Please try again after scraping.');
+        }
+        exportMenu.classList.add('hidden');
+      });
+
+      sheetsBtn.addEventListener('click', async () => {
+        if (lastCsvId) {
+          try {
+            const response = await fetch(`/api/sheets/${lastCsvId}`);
+            const data = await response.json();
+            
+            if (data.success) {
+              // Copy CSV data to clipboard
+              await navigator.clipboard.writeText(data.csvData);
+              
+              // Open new Google Sheets
+              window.open('https://docs.google.com/spreadsheets/create', '_blank');
+              
+              // Show instructions
+              alert('CSV data copied to clipboard! Paste it into the new Google Sheet using Ctrl+V (or Cmd+V on Mac)');
+            } else {
+              alert('Failed to prepare Google Sheets data');
+            }
+          } catch (error) {
+            console.error('Sheets export error:', error);
+            alert('Failed to export to Google Sheets');
+          }
+        } else {
+          // Fallback: client-side CSV generation for Google Sheets
+          generateClientSideSheetsExport();
+        }
+        exportMenu.classList.add('hidden');
+      });
+
+      // Client-side CSV generation functions
+      let currentRows = []; // Store current results for client-side export
+
+      function generateClientSideCSV() {
+        if (!currentRows || currentRows.length === 0) {
+          alert('No data to export');
+          return;
+        }
+        
+        const csvHeader = 'Title,URL,Emails,Phones,Tags,Contact\n';
+        const csvRows = currentRows.map(r => 
+          `"${(r.title || '').replace(/"/g, '""')}","${r.url || ''}","${r.emails || ''}","${r.phones || ''}","${r.tags || ''}","${r.contact || ''}"`
+        ).join('\n');
+        const csv = csvHeader + csvRows;
+        
+        const blob = new Blob([csv], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `winston-results-${Date.now()}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }
+
+      function generateClientSideSheetsExport() {
+        if (!currentRows || currentRows.length === 0) {
+          alert('No data to export');
+          return;
+        }
+        
+        const csvHeader = 'Title,URL,Emails,Phones,Tags,Contact\n';
+        const csvRows = currentRows.map(r => 
+          `"${(r.title || '').replace(/"/g, '""')}","${r.url || ''}","${r.emails || ''}","${r.phones || ''}","${r.tags || ''}","${r.contact || ''}"`
+        ).join('\n');
+        const csv = csvHeader + csvRows;
+        
+        navigator.clipboard.writeText(csv).then(() => {
+          window.open('https://docs.google.com/spreadsheets/create', '_blank');
+          alert('CSV data copied to clipboard! Paste it into the new Google Sheet using Ctrl+V (or Cmd+V on Mac)');
+        }).catch(() => {
+          alert('Failed to copy data to clipboard');
+        });
+      }
 
       // ---- EMAIL COLUMN VISIBILITY TOGGLE ----
       const emailColIndex = 3;           // Name=0, Hostname=1, URL=2, Emails=3

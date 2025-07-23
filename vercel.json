@@ -11,6 +11,14 @@
     "api/download/[csvId].js": {
       "memory": 512,
       "maxDuration": 5
+    },
+    "api/download/[csvId]/xlsx.js": {
+      "memory": 512,
+      "maxDuration": 10
+    },
+    "api/sheets/[csvId].js": {
+      "memory": 512,
+      "maxDuration": 5
     }
   },
   "rewrites": [
