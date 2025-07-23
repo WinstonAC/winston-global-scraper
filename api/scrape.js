@@ -1,9 +1,8 @@
 import chromium from 'chrome-aws-lambda';
+import puppeteer from 'puppeteer-extra';
+import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 
-let puppeteer, StealthPlugin;
 try {
-  puppeteer = require('puppeteer-extra');
-  StealthPlugin = require('puppeteer-extra-plugin-stealth');
   const pluginStealth = StealthPlugin();
   pluginStealth.enabledEvasions.delete('chrome.app');
   puppeteer.use(pluginStealth);
