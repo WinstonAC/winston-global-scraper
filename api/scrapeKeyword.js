@@ -97,7 +97,7 @@ export default async function handler(req, res) {
     try {
       links = await page.evaluate(() => {
         const anchors = Array.from(document.querySelectorAll('a[data-testid="result-title-a"]'));
-        return anchors.slice(0, 10).map(a => ({ title: a.innerText, url: a.href })); // Reduced from 20 to 10 for faster execution
+        return anchors.slice(0, 15).map(a => ({ title: a.innerText, url: a.href })); // Increased to 15 for more results
       });
       console.log('[Keyword Scraper] Found', links.length, 'results');
     } catch (err) {
@@ -107,8 +107,8 @@ export default async function handler(req, res) {
     }
     
     let rows = [];
-    // Process first 5 links to stay within timeout limits
-    const linksToProcess = links.slice(0, 5);
+    // Process first 8 links for better results while managing timeout
+    const linksToProcess = links.slice(0, 8);
     
     for (const link of linksToProcess) {
       try {
@@ -122,10 +122,10 @@ export default async function handler(req, res) {
         const $ = load(html);
         
         const rawEmails = html.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
-        const emails = rawEmails.filter(e => /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(e));
+        const emails = [...new Set(rawEmails)].filter(e => /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(e)).slice(0, 20); // Remove duplicates and limit to 20 per page
         
         const rawPhones = html.match(/\+?\d[\d\s().-]{7,}\d/g) || [];
-        const phones = rawPhones.map(p => p.replace(/\D/g, '')).filter(p => p.length >= 7 && p.length <= 15);
+        const phones = [...new Set(rawPhones.map(p => p.replace(/\D/g, '')))].filter(p => p.length >= 7 && p.length <= 15).slice(0, 10); // Remove duplicates and limit to 10 per page
         
         const tags = tagRules.filter(t => t.re.test(link.title + ' ' + html)).map(t => t.tag);
         const contact = emails.length ? findContactName($, emails[0], link.url) : findContactName($, '', link.url);

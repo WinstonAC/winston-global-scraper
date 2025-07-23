@@ -64,7 +64,7 @@ export default async function handler(req, res) {
     const result = await page.evaluate(() => {
       const title = document.title || 'Untitled';
       const emailLinks = Array.from(document.querySelectorAll('a[href^="mailto:"]'));
-      const emails = emailLinks.map(a => a.href.replace('mailto:', '')).slice(0, 10); // Limit to 10 emails
+      const emails = emailLinks.map(a => a.href.replace('mailto:', '')).slice(0, 25); // Increased to 25 emails
       
       return { title, emails };
     });
