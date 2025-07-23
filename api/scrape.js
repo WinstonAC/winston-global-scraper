@@ -1,25 +1,26 @@
-import { NextResponse } from 'next/server';
 import chromium from 'chrome-aws-lambda';
 
 let puppeteer, StealthPlugin;
 try {
   puppeteer = require('puppeteer-extra');
   StealthPlugin = require('puppeteer-extra-plugin-stealth');
-  puppeteer.use(StealthPlugin());
+  const pluginStealth = StealthPlugin();
+  pluginStealth.enabledEvasions.delete('chrome.app');
+  puppeteer.use(pluginStealth);
 } catch (err) {
   console.error('[Scraper] Failed to load puppeteer-extra or stealth plugin:', err.message);
   throw new Error('Required Puppeteer modules not found. Please install puppeteer-extra and puppeteer-extra-plugin-stealth.');
 }
 
-export async function POST(req) {
+export default async function handler(req, res) {
   let browser;
   let url;
   try {
-    const body = await req.json();
+    const body = req.body;
     url = body.url;
     console.log('[Scraper] Payload:', { url }, 'Timestamp:', new Date().toISOString(), 'Vercel Env:', process.env.VERCEL_ENV);
     if (!url) {
-      return NextResponse.json({ success: false, error: 'Missing URL parameter' }, { status: 400 });
+      return res.status(400).json({ success: false, error: 'Missing URL parameter' });
     }
     try {
       console.log('[Scraper] Launching browser...');
@@ -32,7 +33,7 @@ export async function POST(req) {
       console.log('[Scraper] Browser launched');
     } catch (err) {
       console.error('[Scraper] Browser launch failed:', err.message);
-      return NextResponse.json({ success: false, error: 'Failed to launch browser' }, { status: 500 });
+      return res.status(500).json({ success: false, error: 'Failed to launch browser' });
     }
     let page;
     try {
@@ -42,7 +43,7 @@ export async function POST(req) {
     } catch (err) {
       console.error('[Scraper] Page navigation failed:', err.message);
       if (browser) { try { await browser.close(); } catch (e) {} }
-      return NextResponse.json({ success: false, error: 'Failed to load page' }, { status: 500 });
+      return res.status(500).json({ success: false, error: 'Failed to load page' });
     }
     let result;
     try {
@@ -54,13 +55,13 @@ export async function POST(req) {
     } catch (err) {
       console.error('[Scraper] Data extraction failed:', err.message);
       if (browser) { try { await browser.close(); } catch (e) {} }
-      return NextResponse.json({ success: false, error: 'Failed to extract data' }, { status: 500 });
+      return res.status(500).json({ success: false, error: 'Failed to extract data' });
     }
     await browser.close();
-    return NextResponse.json({ success: true, data: result });
+    return res.status(200).json({ success: true, contacts: result });
   } catch (error) {
     console.error('[Scraper] Unhandled error:', error.message || error);
     if (browser) { try { await browser.close(); } catch (e) {} }
-    return NextResponse.json({ success: false, error: error.message || 'Unknown error' }, { status: 500 });
+    return res.status(500).json({ success: false, error: error.message || 'Unknown error' });
   }
 }

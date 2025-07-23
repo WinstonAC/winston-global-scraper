@@ -11,7 +11,7 @@
   },
   "rewrites": [
     {
-      "source": "/",
+      "source": "/((?!api|_next|favicon.ico).*)",
       "destination": "/public/index.html"
     }
   ],
