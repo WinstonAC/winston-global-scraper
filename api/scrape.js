@@ -16,9 +16,9 @@ export default async function handler(req, res) {
     try {
       console.log('[Scraper] Launching browser...');
       
-      // Use @sparticuz/chromium for Vercel deployment
+      // Use @sparticuz/chromium for Vercel deployment with optimized settings
       browser = await puppeteer.launch({
-        args: chromium.args,
+        args: [...chromium.args, '--disable-dev-shm-usage', '--disable-gpu', '--single-process'],
         defaultViewport: chromium.defaultViewport,
         executablePath: await chromium.executablePath(),
         headless: chromium.headless,
@@ -34,7 +34,9 @@ export default async function handler(req, res) {
     let page;
     try {
       page = await browser.newPage();
-      await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+      
+      // Set shorter timeout for direct URL scraping to avoid 504 errors
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 20000 });
       console.log('[Scraper] Page loaded:', url);
     } catch (err) {
       console.error('[Scraper] Page navigation failed:', err.message);
@@ -46,9 +48,9 @@ export default async function handler(req, res) {
     try {
       result = await page.evaluate(() => ({
         title: document.title,
-        emails: Array.from(document.querySelectorAll('a[href^="mailto:"]')).map(a => a.href),
+        emails: Array.from(document.querySelectorAll('a[href^="mailto:"]')).map(a => a.href.replace('mailto:', '')),
       }));
-      console.log('[Scraper] Extracted emails:', result.emails);
+      console.log('[Scraper] Extracted data:', result);
     } catch (err) {
       console.error('[Scraper] Data extraction failed:', err.message);
       if (browser) { try { await browser.close(); } catch (e) {} }

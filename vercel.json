@@ -2,7 +2,7 @@
   "functions": {
     "api/scrape.js": {
       "memory": 1024,
-      "maxDuration": 30
+      "maxDuration": 45
     },
     "api/scrapeKeyword.js": {
       "memory": 1024,
@@ -15,7 +15,11 @@
   },
   "rewrites": [
     {
-      "source": "/((?!api|_next|favicon.ico).*)",
+      "source": "/favicon.ico",
+      "destination": "/public/favicon.ico"
+    },
+    {
+      "source": "/((?!api|_next|favicon.ico|public).*)",
       "destination": "/public/index.html"
     }
   ],
