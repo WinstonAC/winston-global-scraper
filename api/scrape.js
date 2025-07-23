@@ -82,8 +82,28 @@ export default async function handler(req, res) {
       fs.mkdirSync(outputDir, { recursive: true });
       const csvFilename = `results_${id}.csv`;
       const filename = path.join(outputDir, csvFilename);
-      const csvHeader = 'Title,URL,Emails,Phones,Tags,Contact\n';
-      const csvRow = `"${result.title.replace(/"/g, '""')}","${url}","${result.emails.join(';')}","","","${result.title}"`;
+      // Create spreadsheet-friendly CSV with better formatting  
+      const csvHeader = 'Contact Name,Company/Title,Website,Primary Email,All Emails,Phone Numbers,Tags,Full URL\n';
+      
+      // Extract company name from URL
+      let company = '';
+      try {
+        company = new URL(url).hostname.replace(/^www\./, '');
+      } catch {}
+      
+      const primaryEmail = result.emails[0] || '';
+      const allEmails = result.emails.join(', ');
+      
+      const csvRow = [
+        `"${(result.title || company || '').replace(/"/g, '""')}"`,  // Contact Name
+        `"${(result.title || '').replace(/"/g, '""')}"`,            // Company/Title  
+        `"${company}"`,                                              // Website
+        `"${primaryEmail}"`,                                         // Primary Email
+        `"${allEmails}"`,                                           // All Emails
+        `""`,                                                       // Phone Numbers (empty for direct URL)
+        `""`,                                                       // Tags (empty for direct URL)
+        `"${url}"`                                                  // Full URL
+      ].join(',');
       const csv = csvHeader + csvRow;
       fs.writeFileSync(filename, csv);
       csvId = csvFilename;

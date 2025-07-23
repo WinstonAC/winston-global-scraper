@@ -162,8 +162,43 @@ export default async function handler(req, res) {
     fs.mkdirSync(outputDir, { recursive: true });
     const csvFilename = `results_${id}.csv`;
     const filename = path.join(outputDir, csvFilename);
-    const csvHeader = 'Title,URL,Emails,Phones,Tags,Contact\n';
-    const csvRows = rows.map(r => `"${r.title.replace(/"/g, '""')}","${r.url}","${r.emails}","${r.phones}","${r.tags}","${r.contact}"`).join('\n');
+    // Create spreadsheet-friendly CSV with better formatting
+    const csvHeader = 'Contact Name,Company/Title,Website,Primary Email,All Emails,Phone Numbers,Tags,Full URL\n';
+    const csvRows = rows.map(r => {
+      // Extract primary email (first one)
+      const emailList = (r.emails || '').split(';').filter(e => e.trim());
+      const primaryEmail = emailList[0] || '';
+      const allEmails = emailList.join(', ');
+      
+      // Format phone numbers
+      const phoneList = (r.phones || '').split(';').filter(p => p.trim());
+      const formattedPhones = phoneList.map(p => {
+        // Basic phone formatting for US numbers
+        if (p.length === 10) return `(${p.slice(0,3)}) ${p.slice(3,6)}-${p.slice(6)}`;
+        if (p.length === 11 && p.startsWith('1')) return `+1 (${p.slice(1,4)}) ${p.slice(4,7)}-${p.slice(7)}`;
+        return p;
+      }).join(', ');
+      
+      // Extract company name from URL
+      let company = '';
+      try {
+        company = new URL(r.url).hostname.replace(/^www\./, '');
+      } catch {}
+      
+      // Clean tags
+      const cleanTags = (r.tags || '').split(';').filter(t => t.trim()).join(', ');
+      
+      return [
+        `"${(r.contact || '').replace(/"/g, '""')}"`,           // Contact Name
+        `"${(r.title || company || '').replace(/"/g, '""')}"`,  // Company/Title
+        `"${company}"`,                                          // Website
+        `"${primaryEmail}"`,                                     // Primary Email
+        `"${allEmails}"`,                                        // All Emails
+        `"${formattedPhones}"`,                                  // Phone Numbers
+        `"${cleanTags}"`,                                        // Tags
+        `"${r.url || ''}"`                                       // Full URL
+      ].join(',');
+    }).join('\n');
     const csv = csvHeader + csvRows;
     fs.writeFileSync(filename, csv);
     
