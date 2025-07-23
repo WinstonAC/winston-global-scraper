@@ -289,55 +289,36 @@
       csvBtn.addEventListener('click', async () => {
         console.log('CSV button clicked, lastCsvId:', lastCsvId, 'serverCsvData length:', serverCsvData?.length);
         
-        if (lastCsvId) {
-          try {
-            // Try server download first
-            const response = await fetch(`/api/download/${lastCsvId}`);
-            if (response.ok) {
-              window.location.href = `/api/download/${lastCsvId}`;
-              exportMenu.classList.add('hidden');
-              return;
-            } else {
-              throw new Error('Server download failed');
-            }
-          } catch (error) {
-            console.log('Server download failed, using fallback:', error.message);
-            // Fallback to client-side or server CSV data
-            if (serverCsvData) {
-              downloadCsvData(serverCsvData, lastCsvId);
-            } else {
-              generateClientSideCSV();
-            }
-          }
-        } else {
-          // Fallback: client-side CSV generation
-          console.log('No csvId, generating client-side CSV');
+        // Always use client-side fallback since server files don't persist in serverless
+        if (serverCsvData) {
+          console.log('Using server CSV data for download');
+          downloadCsvData(serverCsvData, lastCsvId || `winston-results-${Date.now()}.csv`);
+        } else if (currentRows && currentRows.length > 0) {
+          console.log('Generating CSV from current rows');
           generateClientSideCSV();
+        } else {
+          console.log('No data available for export');
+          alert('No data to export. Please run a search first.');
         }
+        
         exportMenu.classList.add('hidden');
       });
 
       xlsxBtn.addEventListener('click', async () => {
-        if (lastCsvId) {
-          try {
-            // Try server XLSX download first
-            const response = await fetch(`/api/download/${lastCsvId}/xlsx`);
-            if (response.ok) {
-              window.location.href = `/api/download/${lastCsvId}/xlsx`;
-            } else {
-              throw new Error('Server XLSX download failed');
-            }
-          } catch {
-            // Fallback: client-side XLSX generation using server CSV data
-            if (serverCsvData) {
-              generateClientSideXLSX(serverCsvData, lastCsvId);
-            } else {
-              alert('XLSX export temporarily unavailable. Please use CSV download.');
-            }
-          }
+        console.log('XLSX button clicked');
+        
+        // Since XLSX generation requires additional libraries, fallback to CSV with notification
+        if (serverCsvData) {
+          alert('XLSX export is temporarily unavailable. Downloading as CSV instead.');
+          downloadCsvData(serverCsvData, (lastCsvId || `winston-results-${Date.now()}.csv`).replace('.csv', '_excel.csv'));
+        } else if (currentRows && currentRows.length > 0) {
+          alert('XLSX export is temporarily unavailable. Downloading as CSV instead.');
+          const csvData = generateCsvFromRows();
+          downloadCsvData(csvData, `winston-results-excel-${Date.now()}.csv`);
         } else {
-          alert('XLSX export requires scraped data. Please perform a search first.');
+          alert('No data to export. Please run a search first.');
         }
+        
         exportMenu.classList.add('hidden');
       });
 
@@ -381,12 +362,14 @@
       let serverCsvData = null; // Store server-generated CSV data
 
       function generateClientSideCSV() {
+        console.log('generateClientSideCSV called, serverCsvData exists:', !!serverCsvData);
         const csvData = serverCsvData || generateCsvFromRows();
         if (!csvData) {
           alert('No data to export');
           return;
         }
         
+        console.log('About to download CSV, data length:', csvData.length);
         downloadCsvData(csvData, `winston-results-${Date.now()}.csv`);
       }
 
@@ -397,11 +380,18 @@
           return;
         }
         
+        // First open the Google Sheets tab
+        const sheetsWindow = window.open('https://docs.google.com/spreadsheets/create', '_blank');
+        
+        // Then copy to clipboard
         navigator.clipboard.writeText(csvData).then(() => {
-          window.open('https://docs.google.com/spreadsheets/create', '_blank');
-          alert('CSV data copied to clipboard! Paste it into the new Google Sheet using Ctrl+V (or Cmd+V on Mac)');
+          // Give focus to the new tab if possible
+          if (sheetsWindow) {
+            sheetsWindow.focus();
+          }
+          alert('CSV data copied to clipboard! A new Google Sheet has opened. Paste the data using Ctrl+V (or Cmd+V on Mac)');
         }).catch(() => {
-          alert('Failed to copy data to clipboard');
+          alert('Failed to copy data to clipboard. New Google Sheet opened - you can manually copy the data.');
         });
       }
 
