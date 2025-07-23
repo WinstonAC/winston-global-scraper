@@ -354,43 +354,16 @@
           return;
         }
         
-        console.log('Attempting to open Google Sheets and copy data');
+        console.log('Downloading CSV for Google Sheets import');
         
-        // Copy to clipboard first
-        navigator.clipboard.writeText(csvData).then(() => {
-          console.log('Data copied to clipboard successfully');
-          
-          // Try to open Google Sheets
-          const sheetsWindow = window.open('https://docs.google.com/spreadsheets/create', '_blank');
-          
-          if (sheetsWindow) {
-            console.log('Google Sheets window opened successfully');
-            // Small delay then focus
-            setTimeout(() => {
-              try {
-                sheetsWindow.focus();
-              } catch (e) {
-                console.log('Could not focus new window:', e);
-              }
-            }, 100);
-            
-            alert('✅ Success! CSV data copied to clipboard and Google Sheets opened. \n\n📋 Paste the data using Ctrl+V (or Cmd+V on Mac) in the new sheet.');
-          } else {
-            console.log('Failed to open Google Sheets - likely blocked by popup blocker');
-            alert('📋 CSV data copied to clipboard! \n\n❌ Could not auto-open Google Sheets (popup blocked). \n\n✅ Please manually open: https://docs.google.com/spreadsheets/create \n\nThen paste with Ctrl+V (or Cmd+V on Mac)');
-          }
-        }).catch((error) => {
-          console.log('Failed to copy to clipboard:', error);
-          
-          // Still try to open Google Sheets even if clipboard fails
-          const sheetsWindow = window.open('https://docs.google.com/spreadsheets/create', '_blank');
-          
-          if (sheetsWindow) {
-            alert('❌ Could not copy to clipboard automatically. \n\n✅ Google Sheets opened - you can manually copy and paste the data from the results table.');
-          } else {
-            alert('❌ Could not copy to clipboard or open Google Sheets (popup blocked). \n\n✅ Please manually open: https://docs.google.com/spreadsheets/create \n\nThen copy data from the results table.');
-          }
-        });
+        // Download the CSV file for Google Sheets import
+        const filename = `winston-sheets-import-${Date.now()}.csv`;
+        downloadCsvData(csvData, filename);
+        
+        // Show instructions for importing to Google Sheets
+        setTimeout(() => {
+          alert('📁 CSV file downloaded successfully!\n\n📊 To import to Google Sheets:\n1. Go to: https://docs.google.com/spreadsheets/create\n2. Click File → Import\n3. Upload the downloaded CSV file\n4. Choose "Replace spreadsheet" and click Import');
+        }, 500);
       }
 
       function downloadCsvData(csvData, filename) {
