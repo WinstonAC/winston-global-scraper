@@ -14,19 +14,31 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Tag map
-const tagMap = [
-  { regex: /women in stem/i, tag: 'Women in STEM' },
-  { regex: /africa/i, tag: 'Africa' },
-  { regex: /corporate/i, tag: 'Corporate' },
-  { regex: /university/i, tag: 'University' },
-  { regex: /mentorship program|mentor program|mentoring/i, tag: 'Mentor' },
-  { regex: /coaching cohort/i, tag: 'Mentorship Program' },
+const tagRules = [
+  { tag: "Women in STEM",        re: /women in stem/i },
+  { tag: "Africa",               re: /africa/i },
+  { tag: "Corporate",            re: /.com.*(career|about)/i },
+  { tag: "University",           re: /\.edu|university|college/i },
+  { tag: "Mentor",               re: /\bmentor\b/i },
+  { tag: "Mentorship Program",   re: /mentor(?:ing|ship) program|coaching cohort|career mentor/i },
+  { tag: "Youth Mentorship",     re: /youth mentor|student mentor|STEM mentor|STEM outreach/i },
+  { tag: "Climate Change",       re: /climate change|global warming|net ?zero|decarbon/i },
+  { tag: "Sustainability",       re: /sustainab|\bESG\b|green energy|renewable/i }
 ];
 
 // Placeholder Bing fallback
 async function bingFallback(keyword) {
   // Return [] or [{ title, url, emails, phones, tags }...]
   return [];
+}
+
+// Helper to find contact name near email
+function findContactName(html, email) {
+  const idx = html.indexOf(email);
+  if (idx === -1) return '';
+  const snippet = html.slice(Math.max(0, idx - 80), idx);
+  const match = snippet.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})$/);
+  return match ? match[1].trim() : '';
 }
 
 router.post('/', async (req, res) => {
@@ -68,13 +80,19 @@ router.post('/', async (req, res) => {
         const emails = content.match(emailRegex) || [];
         const phones = content.match(phoneRegex) || [];
         // Tagging
-        const tags = tagMap.filter(t => t.regex.test(link.title + ' ' + content)).map(t => t.tag);
+        const tags = tagRules.filter(t => t.re.test(link.title + ' ' + content)).map(t => t.tag);
+        // Contact extraction
+        const contact = emails.length ? findContactName(content, emails[0]) : '';
+        let fallbackName = '';
+        try { fallbackName = new URL(link.url).hostname.replace(/^www\./, ''); } catch {}
+        const contactName = contact || fallbackName;
         rows.push({
           title: link.title,
           url: link.url,
           emails: emails.join(';'),
           phones: phones.join(';'),
-          tags: tags.join(';')
+          tags: tags.join(';'),
+          contact: contactName
         });
         await subPage.close();
       } catch (err) {
@@ -92,7 +110,7 @@ router.post('/', async (req, res) => {
     const outputDir = path.join(__dirname, '../output');
     fs.mkdirSync(outputDir, { recursive: true });
     const filename = path.join(outputDir, `results_${id}.csv`);
-    const csv = rows.map(r => `"${r.title.replace(/"/g, '""')}","${r.url}","${r.emails}","${r.phones}","${r.tags}"`).join('\n');
+    const csv = rows.map(r => `"${r.title.replace(/"/g, '""')}","${r.url}","${r.emails}","${r.phones}","${r.tags}","${r.contact}"`).join('\n');
     fs.writeFileSync(filename, csv);
     res.json({ rows, csvId: id });
   } catch (error) {

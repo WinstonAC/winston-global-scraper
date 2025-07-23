@@ -6,6 +6,7 @@ import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import scrapeKeyword from './scrapeKeyword.js';
 
 // ES module __dirname workaround
 const __filename = fileURLToPath(import.meta.url);
@@ -22,6 +23,27 @@ app.use(express.json());
 
 // Serve static files from the public directory
 app.use(express.static(path.join(__dirname, '../public')));
+
+// Helper to find contact name near email
+function findContactName(html, email) {
+  const idx = html.indexOf(email);
+  if (idx === -1) return '';
+  const snippet = html.slice(Math.max(0, idx - 80), idx);
+  const match = snippet.match(/([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,2})$/);
+  return match ? match[1].trim() : '';
+}
+
+const tagRules = [
+  { tag: "Women in STEM",        re: /women in stem/i },
+  { tag: "Africa",               re: /africa/i },
+  { tag: "Corporate",            re: /.com.*(career|about)/i },
+  { tag: "University",           re: /\.edu|university|college/i },
+  { tag: "Mentor",               re: /\bmentor\b/i },
+  { tag: "Mentorship Program",   re: /mentor(?:ing|ship) program|coaching cohort|career mentor/i },
+  { tag: "Youth Mentorship",     re: /youth mentor|student mentor|STEM mentor|STEM outreach/i },
+  { tag: "Climate Change",       re: /climate change|global warming|net ?zero|decarbon/i },
+  { tag: "Sustainability",       re: /sustainab|\bESG\b|green energy|renewable/i }
+];
 
 app.post('/api/scrape', async (req, res) => {
   const { url } = req.body;
@@ -55,9 +77,20 @@ app.post('/api/scrape', async (req, res) => {
       const phoneRegex = /\+?\d[\d\s().-]{7,}\d/g;
       const emails = pageContent.match(emailRegex) || [];
       const phones = pageContent.match(phoneRegex) || [];
+      // Contact extraction
+      const contact = emails.length ? findContactName(pageContent, emails[0]) : '';
+      let fallbackName = '';
+      try { fallbackName = new URL(url).hostname.replace(/^www\./, ''); } catch {}
+      const contactName = contact || fallbackName;
+      // Tagging
+      const tags = tagRules.filter(t => t.re.test(pageContent)).map(t => t.tag);
       contacts = [
-        ...emails.map(email => ({ type: 'email', value: email })),
-        ...phones.map(phone => ({ type: 'phone', value: phone }))
+        {
+          emails: emails.join(';'),
+          phones: phones.join(';'),
+          contact: contactName,
+          tags: tags.join(';')
+        }
       ];
     } catch (err) {
       console.error('❌ Error scraping contacts:', err.message);
@@ -68,9 +101,16 @@ app.post('/api/scrape', async (req, res) => {
     try {
       id = Date.now();
       const outputDir = path.join(__dirname, '../output');
-      fs.mkdirSync(outputDir, { recursive: true });
+      try {
+        fs.mkdirSync(outputDir, { recursive: true });
+        fs.accessSync(outputDir, fs.constants.W_OK);
+      } catch (err) {
+        console.error('❌ Output directory is not writable or cannot be created:', outputDir);
+        console.error(err);
+        process.exit(1);
+      }
       const filename = path.join(outputDir, `results_${id}.csv`);
-      const csv = contacts.map(c => `"${c.type}","${c.value}"`).join('\n');
+      const csv = contacts.map(c => `"${c.emails}","${c.phones}","${c.contact}","${c.tags}"`).join('\n');
       fs.writeFileSync(filename, csv);
       console.log(`📁 Contacts saved to ${filename}`);
     } catch (err) {
@@ -91,6 +131,8 @@ app.post('/api/scrape', async (req, res) => {
   }
 });
 
+app.use('/api/scrapeKeyword', scrapeKeyword);
+
 // New download route
 app.get('/api/download/:id', (req, res) => {
   const file = path.join(__dirname, '../output', `results_${req.params.id}.csv`);
@@ -101,6 +143,33 @@ app.get('/api/download/:id', (req, res) => {
     }
   });
 });
+
+const outputDir = path.join(__dirname, '../output');
+try {
+  fs.mkdirSync(outputDir, { recursive: true });
+  fs.accessSync(outputDir, fs.constants.W_OK);
+} catch (err) {
+  console.error('❌ Output directory is not writable or cannot be created:', outputDir);
+  console.error(err);
+  process.exit(1);
+}
+// Cleanup old CSVs (>24h) in output dir
+try {
+  const now = Date.now();
+  const files = fs.readdirSync(outputDir);
+  files.forEach(file => {
+    if (file.startsWith('results_') && file.endsWith('.csv')) {
+      const filePath = path.join(outputDir, file);
+      const stats = fs.statSync(filePath);
+      if (now - stats.mtimeMs > 24 * 60 * 60 * 1000) {
+        fs.unlinkSync(filePath);
+        console.log('🗑️ Deleted old CSV:', filePath);
+      }
+    }
+  });
+} catch (err) {
+  console.error('⚠️ Error during CSV cleanup:', err);
+}
 
 app.listen(PORT, () => {
   console.log(`✅ Winston Scraper API running on http://localhost:${PORT}`);
