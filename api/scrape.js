@@ -1,5 +1,7 @@
 import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
+import fs from 'fs';
+import path from 'path';
 
 export default async function handler(req, res) {
   let browser;
@@ -72,7 +74,23 @@ export default async function handler(req, res) {
     await browser.close();
     clearTimeout(timeoutId);
     
-    return res.status(200).json({ success: true, contacts: result });
+    // Generate CSV file if emails were found
+    let csvId = null;
+    if (result.emails && result.emails.length > 0) {
+      const id = Date.now();
+      const outputDir = '/tmp';
+      fs.mkdirSync(outputDir, { recursive: true });
+      const csvFilename = `results_${id}.csv`;
+      const filename = path.join(outputDir, csvFilename);
+      const csvHeader = 'Title,URL,Emails,Phones,Tags,Contact\n';
+      const csvRow = `"${result.title.replace(/"/g, '""')}","${url}","${result.emails.join(';')}","","","${result.title}"`;
+      const csv = csvHeader + csvRow;
+      fs.writeFileSync(filename, csv);
+      csvId = csvFilename;
+      console.log(`[Scraper] CSV written to: ${csvFilename}`);
+    }
+    
+    return res.status(200).json({ success: true, contacts: result, csvId });
   } catch (error) {
     console.error('[Scraper] Error:', error.message);
     clearTimeout(timeoutId);

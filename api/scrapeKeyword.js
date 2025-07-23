@@ -160,14 +160,15 @@ export default async function handler(req, res) {
     let id = Date.now();
     const outputDir = '/tmp';
     fs.mkdirSync(outputDir, { recursive: true });
-    const filename = path.join(outputDir, `results_${id}.csv`);
+    const csvFilename = `results_${id}.csv`;
+    const filename = path.join(outputDir, csvFilename);
     const csvHeader = 'Title,URL,Emails,Phones,Tags,Contact\n';
     const csvRows = rows.map(r => `"${r.title.replace(/"/g, '""')}","${r.url}","${r.emails}","${r.phones}","${r.tags}","${r.contact}"`).join('\n');
     const csv = csvHeader + csvRows;
     fs.writeFileSync(filename, csv);
     
-    console.log(`[Keyword Scraper] Results written to: results_${id}.csv - Processed ${rows.length} results`);
-    res.status(200).json({ rows, csvId: id });
+    console.log(`[Keyword Scraper] Results written to: ${csvFilename} - Processed ${rows.length} results`);
+    res.status(200).json({ rows, csvId: csvFilename });
   } catch (error) {
     console.error('[Keyword Scraper] Unhandled error:', error.message || error);
     if (browser) { try { await browser.close(); } catch (e) {} }
