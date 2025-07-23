@@ -1,4 +1,4 @@
-import chromium from 'chrome-aws-lambda';
+import chromium from '@sparticuz/chromium';
 import fs from 'fs';
 import path from 'path';
 import { load } from 'cheerio';
@@ -60,14 +60,17 @@ export default async function handler(req, res) {
     
     try {
       console.log('[Keyword Scraper] Launching browser...');
+      
+      // Use @sparticuz/chromium for Vercel deployment
       browser = await puppeteer.launch({
-        executablePath: await chromium.executablePath || process.env.CHROME_EXECUTABLE_PATH,
-        headless: chromium.headless,
         args: chromium.args,
-        defaultViewport: { width: 1280, height: 800 },
+        defaultViewport: chromium.defaultViewport,
+        executablePath: await chromium.executablePath(),
+        headless: chromium.headless,
         ignoreHTTPSErrors: true,
       });
-      console.log('[Keyword Scraper] Browser launched');
+      
+      console.log('[Keyword Scraper] Browser launched successfully');
     } catch (err) {
       console.error('[Keyword Scraper] Browser launch failed:', err.message);
       return res.status(500).json({ error: 'Failed to launch browser' });
