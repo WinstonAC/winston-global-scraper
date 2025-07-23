@@ -287,16 +287,21 @@
 
       // Export handlers
       csvBtn.addEventListener('click', async () => {
+        console.log('CSV button clicked, lastCsvId:', lastCsvId, 'serverCsvData length:', serverCsvData?.length);
+        
         if (lastCsvId) {
           try {
             // Try server download first
             const response = await fetch(`/api/download/${lastCsvId}`);
             if (response.ok) {
               window.location.href = `/api/download/${lastCsvId}`;
+              exportMenu.classList.add('hidden');
+              return;
             } else {
               throw new Error('Server download failed');
             }
-          } catch {
+          } catch (error) {
+            console.log('Server download failed, using fallback:', error.message);
             // Fallback to client-side or server CSV data
             if (serverCsvData) {
               downloadCsvData(serverCsvData, lastCsvId);
@@ -306,6 +311,7 @@
           }
         } else {
           // Fallback: client-side CSV generation
+          console.log('No csvId, generating client-side CSV');
           generateClientSideCSV();
         }
         exportMenu.classList.add('hidden');
@@ -336,6 +342,8 @@
       });
 
       sheetsBtn.addEventListener('click', async () => {
+        console.log('Google Sheets button clicked, lastCsvId:', lastCsvId);
+        
         if (lastCsvId) {
           try {
             const response = await fetch(`/api/sheets/${lastCsvId}`);
@@ -356,11 +364,12 @@
             }
             throw new Error('Server sheets export failed');
           } catch (error) {
-            console.error('Sheets export error:', error);
+            console.log('Server sheets export failed, using fallback:', error.message);
             // Fallback to client-side generation
             generateClientSideSheetsExport();
           }
         } else {
+          console.log('No csvId, using client-side sheets export');
           // Fallback: client-side CSV generation for Google Sheets
           generateClientSideSheetsExport();
         }
@@ -397,6 +406,7 @@
       }
 
       function downloadCsvData(csvData, filename) {
+        console.log('downloadCsvData called with filename:', filename, 'data length:', csvData?.length);
         const blob = new Blob([csvData], { type: 'text/csv' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -406,6 +416,7 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+        console.log('CSV download triggered');
       }
 
       function generateClientSideXLSX(csvData, filename) {
