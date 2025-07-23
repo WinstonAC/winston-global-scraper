@@ -76,6 +76,8 @@ export default async function handler(req, res) {
     
     // Generate CSV file if emails were found
     let csvId = null;
+    let csvData = null;
+    
     if (result.emails && result.emails.length > 0) {
       const id = Date.now();
       const outputDir = '/tmp';
@@ -104,8 +106,8 @@ export default async function handler(req, res) {
         `""`,                                                       // Tags (empty for direct URL)
         `"${url}"`                                                  // Full URL
       ].join(',');
-      const csv = csvHeader + csvRow;
-      fs.writeFileSync(filename, csv);
+      csvData = csvHeader + csvRow;
+      fs.writeFileSync(filename, csvData);
       csvId = csvFilename;
       console.log(`[Scraper] CSV written to: ${csvFilename}`);
     }
@@ -114,7 +116,7 @@ export default async function handler(req, res) {
       success: true, 
       contacts: result, 
       csvId,
-      csvData: csvId ? csv : null // Include CSV data if generated
+      csvData // Include CSV data if generated
     });
   } catch (error) {
     console.error('[Scraper] Error:', error.message);
