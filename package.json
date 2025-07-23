@@ -3,13 +3,14 @@
     "version": "1.0.0",
     "description": "Scrapes Google for orgs and mentors using Puppeteer. Winston-themed UI. Outputs to CSV.",
     "main": "api/scrape.js",
+    "type": "module",
     "scripts": {
         "dev": "node api/scrape.js",
         "start": "node api/scrape.js",
         "lint": "eslint . --ext .js",
-        "test": "jest"
+        "test": "jest",
+        "trigger-deploy": "curl -X POST https://api.vercel.com/v1/integrations/deploy/prj_FnHh91UBw0uT7o8sgkExv8AqV1Kg/huot9DTb4S"
     },
-    "type": "module",
     "dependencies": {
         "cheerio": "^1.1.2",
         "chrome-aws-lambda": "^10.1.0",
@@ -17,7 +18,7 @@
         "csv-writer": "^1.6.0",
         "debug": "^4.4.1",
         "express": "^4.18.2",
-        "puppeteer-core": "^10.1.0",
+        "puppeteer-core": "^10.4.0",
         "puppeteer-extra": "^3.3.6",
         "puppeteer-extra-plugin-stealth": "^2.11.2"
     }

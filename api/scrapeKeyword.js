@@ -1,14 +1,19 @@
-import puppeteerExtra from 'puppeteer-extra';
 import chromium from 'chrome-aws-lambda';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
 import fs from 'fs';
 import path from 'path';
 import { load } from 'cheerio';
 
-// Patch stealth plugin to skip 'chrome.app' evasion
-const pluginStealth = StealthPlugin();
-pluginStealth.enabledEvasions.delete('chrome.app');
-puppeteerExtra.use(pluginStealth);
+let puppeteer, StealthPlugin;
+try {
+  puppeteer = require('puppeteer-extra');
+  StealthPlugin = require('puppeteer-extra-plugin-stealth');
+  const pluginStealth = StealthPlugin();
+  pluginStealth.enabledEvasions.delete('chrome.app');
+  puppeteer.use(pluginStealth);
+} catch (err) {
+  console.error('[Keyword Scraper] Failed to load puppeteer-extra or stealth plugin:', err.message);
+  throw new Error('Required Puppeteer modules not found. Please install puppeteer-extra and puppeteer-extra-plugin-stealth.');
+}
 
 const tagRules = [
   { tag: "Women in STEM",        re: /women in stem/i },
@@ -22,7 +27,10 @@ const tagRules = [
   { tag: "Sustainability",       re: /sustainab|\bESG\b|green energy|renewable/i }
 ];
 
-async function bingFallback(keyword) { return []; }
+async function bingFallback(keyword) { 
+  console.warn("[Keyword Scraper] Using Bing fallback...");
+  return []; 
+}
 function findContactName($, firstEmail, targetUrl) {
   let name = '';
   if (firstEmail) {
@@ -49,33 +57,59 @@ function findContactName($, firstEmail, targetUrl) {
 }
 
 export default async function handler(req, res) {
-  const { keyword } = req.body;
-  if (!keyword || typeof keyword !== 'string') {
-    return res.status(400).json({ error: 'Keyword is required.' });
-  }
   let browser;
-  let rows = [];
-  let id = null;
+  let keyword;
   try {
-    browser = await puppeteerExtra.launch({
-      executablePath: await chromium.executablePath || process.env.CHROME_EXECUTABLE_PATH,
-      headless: chromium.headless,
-      args: chromium.args,
-      defaultViewport: { width: 1280, height: 800 },
-      ignoreHTTPSErrors: true,
-    });
-    const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36');
-    await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
-    const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(keyword)}`;
-    await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
-    await page.waitForSelector('a[data-testid="result-title-a"]', { timeout: 10000 });
-    const links = await page.evaluate(() => {
-      const anchors = Array.from(document.querySelectorAll('a[data-testid="result-title-a"]'));
-      return anchors.slice(0, 20).map(a => ({ title: a.innerText, url: a.href }));
-    });
+    const body = req.body;
+    keyword = body.keyword;
+    console.log('[Keyword Scraper] Payload:', { keyword }, 'Timestamp:', new Date().toISOString(), 'Vercel Env:', process.env.VERCEL_ENV);
+    if (!keyword || typeof keyword !== 'string') {
+      return res.status(400).json({ error: 'Keyword is required.' });
+    }
+    try {
+      console.log('[Keyword Scraper] Launching browser...');
+      browser = await puppeteer.launch({
+        executablePath: await chromium.executablePath || process.env.CHROME_EXECUTABLE_PATH,
+        headless: chromium.headless,
+        args: chromium.args,
+        defaultViewport: { width: 1280, height: 800 },
+        ignoreHTTPSErrors: true,
+      });
+      console.log('[Keyword Scraper] Browser launched');
+    } catch (err) {
+      console.error('[Keyword Scraper] Browser launch failed:', err.message);
+      return res.status(500).json({ error: 'Failed to launch browser' });
+    }
+    let page;
+    try {
+      page = await browser.newPage();
+      await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36');
+      await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
+      const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(keyword)}`;
+      await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
+      console.log('[Keyword Scraper] Navigated to DuckDuckGo search');
+      await page.waitForSelector('a[data-testid="result-title-a"]', { timeout: 10000 });
+    } catch (err) {
+      console.error('[Keyword Scraper] Page navigation failed:', err.message);
+      if (browser) { try { await browser.close(); } catch (e) {} }
+      return res.status(500).json({ error: 'Failed to load search page' });
+    }
+    let links;
+    try {
+      links = await page.evaluate(() => {
+        const anchors = Array.from(document.querySelectorAll('a[data-testid="result-title-a"]'));
+        return anchors.slice(0, 20).map(a => ({ title: a.innerText, url: a.href }));
+      });
+      console.log('[Keyword Scraper] Found', links.length, 'results');
+    } catch (err) {
+      console.error('[Keyword Scraper] Search results extraction failed:', err.message);
+      if (browser) { try { await browser.close(); } catch (e) {} }
+      return res.status(500).json({ error: 'Failed to extract search results' });
+    }
+    let rows = [];
     for (const link of links) {
       try {
+        console.log(`[Keyword Scraper] Scraping subpage: ${link.url}`);
         const subPage = await browser.newPage();
         await subPage.goto(link.url, { waitUntil: 'domcontentloaded', timeout: 15000 });
         const html = await subPage.content();
@@ -86,10 +120,13 @@ export default async function handler(req, res) {
         const phones = rawPhones.map(p => p.replace(/\D/g, '')).filter(p => p.length >= 7 && p.length <= 15);
         const tags = tagRules.filter(t => t.re.test(link.title + ' ' + html)).map(t => t.tag);
         const contact = emails.length ? findContactName($, emails[0], link.url) : findContactName($, '', link.url);
+        console.log(`[Keyword Scraper] Extracted emails: ${emails.join(', ')}`);
+        console.log(`[Keyword Scraper] Contact name: ${contact}`);
+        console.log(`[Keyword Scraper] Tags: ${tags.join(', ')}`);
         rows.push({ title: link.title, url: link.url, emails: emails.join(';'), phones: phones.join(';'), tags: tags.join(';'), contact });
         await subPage.close();
       } catch (err) {
-        console.error('Subpage scrape failed:', err.stack || err);
+        console.error('[Keyword Scraper] Subpage scrape failed:', err.message);
       }
     }
     await browser.close();
@@ -97,18 +134,17 @@ export default async function handler(req, res) {
       const bingRows = await bingFallback(keyword);
       rows = rows.concat(bingRows);
     }
-    id = Date.now();
-    const outputDir = '/tmp'; // Always use /tmp for Vercel
+    let id = Date.now();
+    const outputDir = '/tmp';
     fs.mkdirSync(outputDir, { recursive: true });
     const filename = path.join(outputDir, `results_${id}.csv`);
     const csv = rows.map(r => `"${r.title.replace(/"/g, '""')}","${r.url}","${r.emails}","${r.phones}","${r.tags}","${r.contact}"`).join('\n');
     fs.writeFileSync(filename, csv);
+    console.log(`[Keyword Scraper] Results written to: results_${id}.csv`);
     res.status(200).json({ rows, csvId: id });
   } catch (error) {
-    console.error('Scrape failed:', error.stack || error);
-    if (browser) {
-      try { await browser.close(); } catch (e) {}
-    }
-    res.status(500).json({ error: 'Scrape failed', details: error.message || error.toString() });
+    console.error('[Keyword Scraper] Unhandled error:', error.message || error);
+    if (browser) { try { await browser.close(); } catch (e) {} }
+    res.status(500).json({ error: 'Scrape failed' });
   }
 } 
