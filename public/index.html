@@ -63,6 +63,12 @@
           >
             Scrape
           </button>
+          <button
+            id="downloadBtn"
+            class="bg-transparent border border-lime-400 px-4 py-2 rounded-lg hover:bg-lime-400 hover:text-gray-900 transition hidden"
+          >
+            Download CSV
+          </button>
         </div>
 
         <!-- Results -->
@@ -109,6 +115,8 @@
       const loader = document.getElementById('loader');
       const resultsWrapper = document.getElementById('resultsWrapper');
       const resultsBox = document.getElementById('resultsBox');
+      const downloadBtn = document.getElementById('downloadBtn');
+      let lastCsvId = null;
 
       async function scrape() {
         const url = urlInput.value.trim();
@@ -118,17 +126,27 @@
         loader.classList.remove('hidden');
         resultsWrapper.classList.add('hidden');
         resultsBox.textContent = '';
+        downloadBtn.classList.add('hidden');
+        lastCsvId = null;
 
         try {
-          const res = await fetch(`/api/scrape?url=${encodeURIComponent(url)}`);
+          const res = await fetch('/api/scrape', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url })
+          });
           const data = await res.json();
 
           if (!res.ok) {
             throw new Error(data.error || 'Scrape failed');
           }
 
-          resultsBox.textContent = JSON.stringify(data, null, 2);
+          resultsBox.textContent = JSON.stringify(data.contacts, null, 2);
           resultsWrapper.classList.remove('hidden');
+          if (data.csvId) {
+            lastCsvId = data.csvId;
+            downloadBtn.classList.remove('hidden');
+          }
         } catch (err) {
           alert(err.message);
         } finally {
@@ -140,6 +158,10 @@
       scrapeBtn.addEventListener('click', scrape);
       urlInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') scrape();
+      });
+      downloadBtn.addEventListener('click', () => {
+        if (!lastCsvId) return;
+        window.location.href = `/api/download/${lastCsvId}`;
       });
     </script>
   </body>
