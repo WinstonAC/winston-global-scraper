@@ -55,6 +55,10 @@
             <input type="radio" name="mode" value="url" />
             Direct URL
           </label>
+          <label class="flex items-center gap-1 text-sm">
+            <input type="checkbox" id="emailToggle" checked />
+            Include e-mails
+          </label>
         </div>
         <div
           class="flex flex-col sm:flex-row gap-4 items-center justify-center mb-12"
@@ -218,6 +222,23 @@
         if (!lastCsvId) return;
         window.location.href = `/api/download/${lastCsvId}`;
       });
+
+      // ---- EMAIL COLUMN VISIBILITY TOGGLE ----
+      const emailColIndex = 2;           // Title=0, URL=1, Emails=2
+      function toggleEmailColumn(show) {
+        document
+          .querySelectorAll('#resultsWrapper table')
+          .forEach(tbl => {
+            tbl.querySelectorAll('tr').forEach(row => {
+              const cell = row.children[emailColIndex];
+              if (cell) cell.style.display = show ? '' : 'none';
+            });
+          });
+      }
+      const emailToggle = document.getElementById('emailToggle');
+      emailToggle.addEventListener('change', () =>
+        toggleEmailColumn(emailToggle.checked)
+      );
     </script>
   </body>
 </html> 
