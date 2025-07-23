@@ -7,6 +7,10 @@
     "api/scrapeKeyword.js": {
       "memory": 1024,
       "maxDuration": 10
+    },
+    "api/download/[csvId].js": {
+      "memory": 512,
+      "maxDuration": 5
     }
   },
   "rewrites": [

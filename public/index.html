@@ -171,7 +171,15 @@
               body: JSON.stringify({ url: value })
             });
             data = await res.json();
-            rows = data.contacts;
+            // Convert URL scraper response to match keyword scraper format
+            rows = data.contacts ? [{ 
+              title: data.contacts.title || 'Scraped Page',
+              url: value,
+              emails: data.contacts.emails ? data.contacts.emails.join(';') : '',
+              phones: '',
+              tags: '',
+              contact: data.contacts.title || ''
+            }] : [];
           }
 
           if (!res.ok) {
@@ -236,7 +244,7 @@
       });
 
       // ---- EMAIL COLUMN VISIBILITY TOGGLE ----
-      const emailColIndex = 2;           // Title=0, URL=1, Emails=2
+      const emailColIndex = 3;           // Name=0, Hostname=1, URL=2, Emails=3
       function toggleEmailColumn(show) {
         document
           .querySelectorAll('#resultsWrapper table')
