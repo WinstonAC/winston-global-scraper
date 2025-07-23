@@ -1,1 +1,12 @@
-{}
+{
+  "functions": {
+    "api/scrape.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    },
+    "api/scrapeKeyword.js": {
+      "memory": 1024,
+      "maxDuration": 10
+    }
+  }
+}
