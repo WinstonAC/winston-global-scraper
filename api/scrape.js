@@ -9,6 +9,7 @@ import { fileURLToPath } from 'url';
 import scrapeKeyword from './scrapeKeyword.js';
 import { load } from 'cheerio';
 import { findContactName } from './scrapeKeyword.js';
+import health from './health.js';
 
 // ES module __dirname workaround
 const __filename = fileURLToPath(import.meta.url);
@@ -82,7 +83,8 @@ app.post('/api/scrape', async (req, res) => {
           emails: emails.join(';'),
           phones: phones.join(';'),
           contact,
-          tags: tags.join(';')
+          tags: tags.join(';'),
+          url // Always include the source URL so the frontend never shows "undefined"
         }
       ];
     } catch (err) {
@@ -125,6 +127,7 @@ app.post('/api/scrape', async (req, res) => {
 });
 
 app.use('/api/scrapeKeyword', scrapeKeyword);
+app.use('/api', health);
 
 // New download route
 app.get('/api/download/:id', (req, res) => {
