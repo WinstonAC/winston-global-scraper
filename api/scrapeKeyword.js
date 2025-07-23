@@ -61,9 +61,9 @@ export default async function handler(req, res) {
     try {
       console.log('[Keyword Scraper] Launching browser...');
       
-      // Use @sparticuz/chromium for Vercel deployment
+      // Use @sparticuz/chromium for Vercel deployment with optimized settings
       browser = await puppeteer.launch({
-        args: chromium.args,
+        args: [...chromium.args, '--disable-dev-shm-usage', '--disable-gpu', '--single-process'],
         defaultViewport: chromium.defaultViewport,
         executablePath: await chromium.executablePath(),
         headless: chromium.headless,
@@ -83,7 +83,7 @@ export default async function handler(req, res) {
       await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
       
       const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(keyword)}`;
-      await page.goto(searchUrl, { waitUntil: 'domcontentloaded' });
+      await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
       console.log('[Keyword Scraper] Navigated to DuckDuckGo search');
       
       await page.waitForSelector('a[data-testid="result-title-a"]', { timeout: 10000 });
@@ -97,7 +97,7 @@ export default async function handler(req, res) {
     try {
       links = await page.evaluate(() => {
         const anchors = Array.from(document.querySelectorAll('a[data-testid="result-title-a"]'));
-        return anchors.slice(0, 20).map(a => ({ title: a.innerText, url: a.href }));
+        return anchors.slice(0, 10).map(a => ({ title: a.innerText, url: a.href })); // Reduced from 20 to 10 for faster execution
       });
       console.log('[Keyword Scraper] Found', links.length, 'results');
     } catch (err) {
@@ -107,11 +107,16 @@ export default async function handler(req, res) {
     }
     
     let rows = [];
-    for (const link of links) {
+    // Process first 5 links to stay within timeout limits
+    const linksToProcess = links.slice(0, 5);
+    
+    for (const link of linksToProcess) {
       try {
         console.log(`[Keyword Scraper] Scraping subpage: ${link.url}`);
         const subPage = await browser.newPage();
-        await subPage.goto(link.url, { waitUntil: 'domcontentloaded', timeout: 15000 });
+        
+        // Set shorter timeout for individual pages
+        await subPage.goto(link.url, { waitUntil: 'domcontentloaded', timeout: 8000 });
         
         const html = await subPage.content();
         const $ = load(html);
@@ -141,6 +146,7 @@ export default async function handler(req, res) {
         await subPage.close();
       } catch (err) {
         console.error('[Keyword Scraper] Subpage scrape failed:', err.message);
+        // Continue processing other links even if one fails
       }
     }
     
@@ -160,7 +166,7 @@ export default async function handler(req, res) {
     const csv = csvHeader + csvRows;
     fs.writeFileSync(filename, csv);
     
-    console.log(`[Keyword Scraper] Results written to: results_${id}.csv`);
+    console.log(`[Keyword Scraper] Results written to: results_${id}.csv - Processed ${rows.length} results`);
     res.status(200).json({ rows, csvId: id });
   } catch (error) {
     console.error('[Keyword Scraper] Unhandled error:', error.message || error);

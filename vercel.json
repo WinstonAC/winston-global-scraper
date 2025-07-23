@@ -2,11 +2,11 @@
   "functions": {
     "api/scrape.js": {
       "memory": 1024,
-      "maxDuration": 10
+      "maxDuration": 30
     },
     "api/scrapeKeyword.js": {
       "memory": 1024,
-      "maxDuration": 10
+      "maxDuration": 60
     },
     "api/download/[csvId].js": {
       "memory": 512,
