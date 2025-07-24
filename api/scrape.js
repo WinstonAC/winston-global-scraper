@@ -66,7 +66,33 @@ export default async function handler(req, res) {
       const emailLinks = Array.from(document.querySelectorAll('a[href^="mailto:"]'));
       const emails = emailLinks.map(a => a.href.replace('mailto:', '')).slice(0, 25); // Increased to 25 emails
       
-      return { title, emails };
+      // 📱 PHONE NUMBER EXTRACTION (matching other scrapers)
+      const html = document.documentElement.outerHTML;
+      const phonePatterns = [
+        /\+\d{1,4}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g,
+        /\(\d{3}\)[-.\s]?\d{3}[-.\s]?\d{4}/g,
+        /\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/g,
+        /\+\d{10,15}/g
+      ];
+      
+      let rawPhones = [];
+      phonePatterns.forEach(pattern => {
+        const matches = html.match(pattern) || [];
+        rawPhones = rawPhones.concat(matches);
+      });
+      
+      const phones = [...new Set(rawPhones)]
+        .map(p => p.replace(/[^\d+]/g, ''))
+        .filter(p => {
+          const digits = p.replace(/\D/g, '');
+          return digits.length >= 10 && digits.length <= 15 && 
+                 !digits.match(/^(19|20)\d{6}/) &&
+                 !digits.match(/^\d{8}$/) &&
+                 digits.length !== 8;
+        })
+        .slice(0, 5);
+      
+      return { title, emails, phones };
     });
     
     console.log('[Scraper] Data extracted:', result);
@@ -96,14 +122,33 @@ export default async function handler(req, res) {
       const primaryEmail = result.emails[0] || '';
       const allEmails = result.emails.join(', ');
       
+      // 📱 Format phone numbers same as other scrapers
+      const phoneList = result.phones || [];
+      const formattedPhones = phoneList.map(p => {
+        const digits = p.replace(/\D/g, '');
+        if (digits.length === 10) {
+          return `+1 (${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
+        }
+        if (digits.length === 11 && digits.startsWith('1')) {
+          return `+1 (${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
+        }
+        if (digits.length > 11) {
+          return `+${digits}`;
+        }
+        if (digits.length >= 10) {
+          return `+${digits.slice(0,2)} (${digits.slice(2,5)}) ${digits.slice(5,8)}-${digits.slice(8)}`;
+        }
+        return p;
+      }).join(', ');
+      
       const csvRow = [
         `"${(result.title || company || '').replace(/"/g, '""')}"`,  // Contact Name
         `"${(result.title || '').replace(/"/g, '""')}"`,            // Company/Title  
         `"${company}"`,                                              // Website
         `"${primaryEmail}"`,                                         // Primary Email
         `"${allEmails}"`,                                           // All Emails
-        `""`,                                                       // Phone Numbers (empty for direct URL)
-        `""`,                                                       // Tags (empty for direct URL)
+        `"${formattedPhones}"`,                                     // Phone Numbers
+        `"Corporate"`,                                              // Tags (Corporate for direct URL)
         `"${url}"`                                                  // Full URL
       ].join(',');
       csvData = csvHeader + csvRow;

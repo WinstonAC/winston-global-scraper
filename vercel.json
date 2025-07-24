@@ -8,6 +8,10 @@
       "memory": 1024,
       "maxDuration": 60
     },
+    "api/batchScrape.js": {
+      "memory": 1536,
+      "maxDuration": 180
+    },
     "api/download/[csvId].js": {
       "memory": 512,
       "maxDuration": 5

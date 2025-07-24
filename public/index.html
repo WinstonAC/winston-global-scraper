@@ -76,7 +76,11 @@
         <div class="flex gap-4 mb-4 justify-center">
           <label class="flex items-center gap-1">
             <input type="radio" name="mode" value="keyword" checked />
-            Keyword
+            Single Keyword
+          </label>
+          <label class="flex items-center gap-1">
+            <input type="radio" name="mode" value="batch" />
+            🚀 Batch Search
           </label>
           <label class="flex items-center gap-1">
             <input type="radio" name="mode" value="url" />
@@ -97,6 +101,11 @@
             placeholder="Enter keyword or URL"
             class="w-full sm:w-96 px-4 py-2 rounded-lg bg-white text-gray-900 border border-blue-400 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
+          <textarea
+            id="batchInput"
+            placeholder="Enter keywords (one per line):&#10;women in stem investors&#10;female tech entrepreneurs&#10;diversity venture capital&#10;women startup founders&#10;female angel investors"
+            class="hidden w-full sm:w-96 h-32 px-4 py-2 rounded-lg bg-white text-gray-900 border border-blue-400 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+          ></textarea>
           <button
             id="scrapeBtn"
             class="bg-lime-500 hover:bg-lime-400 text-gray-900 font-semibold px-6 py-2 rounded-lg transition disabled:opacity-50"
@@ -190,19 +199,43 @@
       const sheetsBtn = document.getElementById('sheetsBtn');
       let lastCsvId = null;
       let mode = 'keyword';
+      const batchInput = document.getElementById('batchInput');
+      
       const modeRadios = document.getElementsByName('mode');
       modeRadios.forEach(radio => {
         radio.addEventListener('change', () => {
           mode = document.querySelector('input[name="mode"]:checked').value;
           urlInput.value = '';
+          batchInput.value = '';
           resultsWrapper.classList.add('hidden');
           exportDropdown.classList.add('hidden');
+          
+          // Toggle input visibility
+          if (mode === 'batch') {
+            urlInput.classList.add('hidden');
+            batchInput.classList.remove('hidden');
+            batchInput.placeholder = '🚀 Enter keywords (one per line):\nwomen in stem investors\nfemale tech entrepreneurs\ndiversity venture capital\nwomen startup founders\nfemale angel investors';
+          } else {
+            urlInput.classList.remove('hidden');
+            batchInput.classList.add('hidden');
+            if (mode === 'url') {
+              urlInput.placeholder = '🌐 Enter website URL (e.g., https://all-raise.org)';
+            } else {
+              urlInput.placeholder = '🔍 Enter keyword or search term (e.g., women venture capital)';
+            }
+          }
         });
       });
 
       async function scrape() {
-        const value = urlInput.value.trim();
-        if (!value) return;
+        let value;
+        if (mode === 'batch') {
+          value = batchInput.value.trim();
+          if (!value) return;
+        } else {
+          value = urlInput.value.trim();
+          if (!value) return;
+        }
 
         scrapeBtn.disabled = true;
         loader.classList.remove('hidden');
@@ -214,7 +247,29 @@
 
         try {
           let res, data, rows;
-          if (mode === 'keyword') {
+          if (mode === 'batch') {
+            // 🚀 BATCH SEARCH MODE
+            const keywords = value.split('\n').map(k => k.trim()).filter(k => k.length > 0);
+            if (keywords.length === 0) {
+              throw new Error('Please enter at least one keyword');
+            }
+            if (keywords.length > 5) {
+              throw new Error('Maximum 5 keywords allowed per batch');
+            }
+            
+            res = await fetch('/api/batchScrape', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ keywords })
+            });
+            data = await res.json();
+            rows = data.rows;
+            
+            // Show batch summary
+            if (data.summary) {
+              console.log(`🚀 Batch Summary: ${data.summary.totalResults} results from ${data.summary.keywordsProcessed} keywords (${data.summary.duplicatesRemoved} duplicates removed)`);
+            }
+          } else if (mode === 'keyword') {
             res = await fetch('/api/scrapeKeyword', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -223,20 +278,39 @@
             data = await res.json();
             rows = data.rows;
           } else {
+            // 🔧 DIRECT URL MODE - Enhanced validation
+            if (!value.startsWith('http://') && !value.startsWith('https://')) {
+              value = 'https://' + value;
+            }
+            
+            // Validate URL format
+            try {
+              new URL(value);
+            } catch (e) {
+              throw new Error('Please enter a valid URL (e.g., https://example.com)');
+            }
+            
             res = await fetch('/api/scrape', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ url: value })
             });
             data = await res.json();
+            
+            if (!res.ok) {
+              throw new Error(data.error || 'Failed to scrape URL');
+            }
+            
             // Convert URL scraper response to match keyword scraper format
             rows = data.contacts ? [{ 
               title: data.contacts.title || 'Scraped Page',
               url: value,
               emails: data.contacts.emails ? data.contacts.emails.join(';') : '',
-              phones: '',
-              tags: '',
-              contact: data.contacts.title || ''
+              phones: data.contacts.phones ? data.contacts.phones.join(';') : '',
+              tags: 'Corporate',
+              contact: data.contacts.title || '',
+              jobTitle: '',
+              socialMedia: ''
             }] : [];
           }
 
@@ -269,6 +343,10 @@
                 try { hostname = new URL(r.url).hostname.replace(/^www\./, ''); } catch {}
                 const firstEmail = (r.emails || '').split(';')[0] || '';
                 const firstPhone = (r.phones || '').split(';')[0] || '';
+                const tags = (r.tags || '').split(';').filter(t => t.trim()).map(t => 
+                  `<span class="inline-block bg-blue-600/20 text-blue-300 px-2 py-1 rounded-md text-xs mr-1 mb-1">${t.trim()}</span>`
+                ).join('');
+                
                 return `
                   <tr class="hover:bg-slate-700/20 transition-colors">
                     <td class="px-3 py-4 min-w-[120px]">
@@ -281,10 +359,14 @@
                     </td>
                     <td class="px-3 py-4 min-w-[160px]">
                       <div class="text-sm text-gray-200 mb-1" title="${firstEmail}">${firstEmail}</div>
-                      <div class="text-xs text-gray-400 sm:hidden" title="${firstPhone}">${firstPhone}</div>
+                      ${firstPhone ? `<a href="tel:${firstPhone.replace(/[^\d+]/g, '')}" class="text-xs text-green-400 hover:text-green-300 sm:hidden cursor-pointer" title="Call ${firstPhone}">${firstPhone}</a>` : ''}
                     </td>
-                    <td class="hidden sm:table-cell px-3 py-4 text-sm text-gray-300 min-w-[120px]" title="${firstPhone}">${firstPhone}</td>
-                    <td class="hidden lg:table-cell px-3 py-4 text-xs text-gray-400 min-w-[100px]" title="${r.tags || ''}">${r.tags || ''}</td>
+                    <td class="hidden sm:table-cell px-3 py-4 text-sm min-w-[120px]">
+                      ${firstPhone ? `<a href="tel:${firstPhone.replace(/[^\d+]/g, '')}" class="text-green-400 hover:text-green-300 cursor-pointer" title="Call ${firstPhone}">${firstPhone}</a>` : ''}
+                    </td>
+                    <td class="hidden lg:table-cell px-3 py-4 min-w-[120px]">
+                      <div class="flex flex-wrap">${tags}</div>
+                    </td>
                   </tr>`;
               }).join('')}
               </tbody>`;

@@ -44,11 +44,6 @@ const tagRules = [
   { tag: "Remote/Global",        re: /remote|global|worldwide|international|distributed team/i }
 ];
 
-async function bingFallback(keyword) { 
-  console.warn("[Keyword Scraper] Using Bing fallback...");
-  return []; 
-}
-
 function findContactName($, firstEmail, targetUrl) {
   let name = '';
   let jobTitle = '';
@@ -102,83 +97,40 @@ function findContactName($, firstEmail, targetUrl) {
   return { name: name || '', jobTitle: jobTitle || '' };
 }
 
-export default async function handler(req, res) {
-  let browser;
-  let keyword;
+async function scrapeKeyword(browser, keyword) {
+  console.log(`[Batch Scraper] Processing keyword: ${keyword}`);
+  
   try {
-    const body = req.body;
-    keyword = body.keyword;
-    console.log('[Keyword Scraper] Payload:', { keyword }, 'Timestamp:', new Date().toISOString(), 'Vercel Env:', process.env.VERCEL_ENV);
+    const page = await browser.newPage();
+    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36');
+    await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
     
-    if (!keyword || typeof keyword !== 'string') {
-      return res.status(400).json({ error: 'Keyword is required.' });
-    }
+    const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(keyword)}`;
+    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
     
-    try {
-      console.log('[Keyword Scraper] Launching browser...');
-      
-      // Use @sparticuz/chromium for Vercel deployment with optimized settings
-      browser = await puppeteer.launch({
-        args: [...chromium.args, '--disable-dev-shm-usage', '--disable-gpu', '--single-process'],
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
-        ignoreHTTPSErrors: true,
-      });
-      
-      console.log('[Keyword Scraper] Browser launched successfully');
-    } catch (err) {
-      console.error('[Keyword Scraper] Browser launch failed:', err.message);
-      return res.status(500).json({ error: 'Failed to launch browser' });
-    }
+    await page.waitForSelector('a[data-testid="result-title-a"]', { timeout: 10000 });
     
-    let page;
-    try {
-      page = await browser.newPage();
-      await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36');
-      await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
-      
-      const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(keyword)}`;
-      await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
-      console.log('[Keyword Scraper] Navigated to DuckDuckGo search');
-      
-      await page.waitForSelector('a[data-testid="result-title-a"]', { timeout: 10000 });
-    } catch (err) {
-      console.error('[Keyword Scraper] Page navigation failed:', err.message);
-      if (browser) { try { await browser.close(); } catch (e) {} }
-      return res.status(500).json({ error: 'Failed to load search page' });
-    }
+    const links = await page.evaluate(() => {
+      const anchors = Array.from(document.querySelectorAll('a[data-testid="result-title-a"]'));
+      return anchors.slice(0, 10).map(a => ({ title: a.innerText, url: a.href })); // Reduced to 10 for batch processing
+    });
     
-    let links;
-    try {
-      links = await page.evaluate(() => {
-        const anchors = Array.from(document.querySelectorAll('a[data-testid="result-title-a"]'));
-        return anchors.slice(0, 15).map(a => ({ title: a.innerText, url: a.href })); // Increased to 15 for more results
-      });
-      console.log('[Keyword Scraper] Found', links.length, 'results');
-    } catch (err) {
-      console.error('[Keyword Scraper] Search results extraction failed:', err.message);
-      if (browser) { try { await browser.close(); } catch (e) {} }
-      return res.status(500).json({ error: 'Failed to extract search results' });
-    }
+    await page.close();
     
     let rows = [];
-    // Process first 8 links for better results while managing timeout
-    const linksToProcess = links.slice(0, 8);
+    // Process first 5 links for batch mode
+    const linksToProcess = links.slice(0, 5);
     
     for (const link of linksToProcess) {
       try {
-        console.log(`[Keyword Scraper] Scraping subpage: ${link.url}`);
         const subPage = await browser.newPage();
-        
-        // Set shorter timeout for individual pages
         await subPage.goto(link.url, { waitUntil: 'domcontentloaded', timeout: 8000 });
         
         const html = await subPage.content();
         const $ = load(html);
         
         const rawEmails = html.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
-        const emails = [...new Set(rawEmails)].filter(e => /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(e)).slice(0, 20); // Remove duplicates and limit to 20 per page
+        const emails = [...new Set(rawEmails)].filter(e => /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(e)).slice(0, 10);
         
         // 📱 ENHANCED PHONE NUMBER EXTRACTION
         const phonePatterns = [
@@ -204,12 +156,12 @@ export default async function handler(req, res) {
                    !digits.match(/^\d{8}$/) &&       // Exclude 8-digit dates
                    digits.length !== 8;             // Exclude simple dates
           })
-          .slice(0, 5);
+          .slice(0, 3);
         
         // 🚀 SOCIAL MEDIA EXTRACTION
         const linkedinMatches = html.match(/https?:\/\/(?:www\.)?linkedin\.com\/(?:in|company)\/[a-zA-Z0-9-]+/g) || [];
         const twitterMatches = html.match(/https?:\/\/(?:www\.)?(?:twitter\.com|x\.com)\/[a-zA-Z0-9_]+/g) || [];
-        const socialMedia = [...new Set([...linkedinMatches, ...twitterMatches])].slice(0, 5); // Limit to 5 profiles per page
+        const socialMedia = [...new Set([...linkedinMatches, ...twitterMatches])].slice(0, 3);
         
         const tags = tagRules.filter(t => t.re.test(link.title + ' ' + html)).map(t => t.tag);
         const contactInfo = emails.length ? findContactName($, emails[0], link.url) : findContactName($, '', link.url);
@@ -223,12 +175,7 @@ export default async function handler(req, res) {
           const matches = html.match(pattern) || [];
           detectedJobTitles = detectedJobTitles.concat(matches);
         }
-        const uniqueJobTitles = [...new Set(detectedJobTitles)].slice(0, 3).join(', '); // Limit to 3 unique titles
-        
-        console.log(`[Keyword Scraper] Extracted emails: ${emails.join(', ')}`);
-        console.log(`[Keyword Scraper] Contact name: ${contactInfo.name}`);
-        console.log(`[Keyword Scraper] Job titles: ${uniqueJobTitles}`);
-        console.log(`[Keyword Scraper] Tags: ${tags.join(', ')}`);
+        const uniqueJobTitles = [...new Set(detectedJobTitles)].slice(0, 2).join(', ');
         
         rows.push({ 
           title: link.title, 
@@ -237,33 +184,80 @@ export default async function handler(req, res) {
           phones: phones.join(';'), 
           tags: tags.join(';'), 
           contact: contactInfo.name,
-          jobTitle: contactInfo.jobTitle || uniqueJobTitles, // 🚀 Add job titles
-          socialMedia: socialMedia.join(';') // 🚀 Add social media profiles
+          jobTitle: contactInfo.jobTitle || uniqueJobTitles,
+          socialMedia: socialMedia.join(';'),
+          keyword: keyword // Track which keyword found this result
         });
         
         await subPage.close();
       } catch (err) {
-        console.error('[Keyword Scraper] Subpage scrape failed:', err.message);
-        // Continue processing other links even if one fails
+        console.error(`[Batch Scraper] Subpage scrape failed for ${link.url}:`, err.message);
       }
+    }
+    
+    console.log(`[Batch Scraper] Completed keyword "${keyword}" - found ${rows.length} results`);
+    return rows;
+    
+  } catch (error) {
+    console.error(`[Batch Scraper] Keyword "${keyword}" failed:`, error.message);
+    return [];
+  }
+}
+
+export default async function handler(req, res) {
+  let browser;
+  
+  try {
+    const body = req.body;
+    const { keywords } = body;
+    
+    console.log('[Batch Scraper] Payload:', { keywords }, 'Timestamp:', new Date().toISOString());
+    
+    if (!keywords || !Array.isArray(keywords) || keywords.length === 0) {
+      return res.status(400).json({ error: 'Keywords array is required.' });
+    }
+    
+    if (keywords.length > 5) {
+      return res.status(400).json({ error: 'Maximum 5 keywords allowed per batch.' });
+    }
+    
+    console.log('[Batch Scraper] Launching browser...');
+    
+    browser = await puppeteer.launch({
+      args: [...chromium.args, '--disable-dev-shm-usage', '--disable-gpu', '--single-process'],
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+      ignoreHTTPSErrors: true,
+    });
+    
+    console.log('[Batch Scraper] Browser launched successfully');
+    
+    // Process all keywords
+    let allRows = [];
+    for (const keyword of keywords) {
+      const keywordRows = await scrapeKeyword(browser, keyword.trim());
+      allRows = allRows.concat(keywordRows);
     }
     
     await browser.close();
     
-    if (rows.length < 3) {
-      const bingRows = await bingFallback(keyword);
-      rows = rows.concat(bingRows);
-    }
+    // Remove duplicates based on URL
+    const uniqueRows = allRows.filter((row, index, self) => 
+      index === self.findIndex((r) => r.url === row.url)
+    );
     
-    let id = Date.now();
+    console.log(`[Batch Scraper] Total unique results: ${uniqueRows.length}`);
+    
+    // Generate CSV
+    const id = Date.now();
     const outputDir = '/tmp';
     fs.mkdirSync(outputDir, { recursive: true });
-    const csvFilename = `results_${id}.csv`;
+    const csvFilename = `batch_results_${id}.csv`;
     const filename = path.join(outputDir, csvFilename);
-    // Create spreadsheet-friendly CSV with better formatting
-    const csvHeader = 'Contact Name,Job Title,Company/Title,Website,Primary Email,All Emails,Phone Numbers,Social Media,Tags,Full URL\n';
-    const csvRows = rows.map(r => {
-      // Extract primary email (first one)
+    
+    const csvHeader = 'Contact Name,Job Title,Company/Title,Website,Primary Email,All Emails,Phone Numbers,Social Media,Tags,Search Keyword,Full URL\n';
+    const csvRows = uniqueRows.map(r => {
       const emailList = (r.emails || '').split(';').filter(e => e.trim());
       const primaryEmail = emailList[0] || '';
       const allEmails = emailList.join(', ');
@@ -292,43 +286,48 @@ export default async function handler(req, res) {
         return p;
       }).join(', ');
       
-      // Extract company name from URL
       let company = '';
       try {
         company = new URL(r.url).hostname.replace(/^www\./, '');
       } catch {}
       
-      // Clean tags and social media
       const cleanTags = (r.tags || '').split(';').filter(t => t.trim()).join(', ');
       const cleanSocialMedia = (r.socialMedia || '').split(';').filter(s => s.trim()).join(', ');
       
       return [
-        `"${(r.contact || '').replace(/"/g, '""')}"`,           // Contact Name
-        `"${(r.jobTitle || '').replace(/"/g, '""')}"`,          // Job Title
-        `"${(r.title || company || '').replace(/"/g, '""')}"`,  // Company/Title
-        `"${company}"`,                                          // Website
-        `"${primaryEmail}"`,                                     // Primary Email
-        `"${allEmails}"`,                                        // All Emails
-        `"${formattedPhones}"`,                                  // Phone Numbers
-        `"${cleanSocialMedia}"`,                                 // Social Media Profiles
-        `"${cleanTags}"`,                                        // Tags
-        `"${r.url || ''}"`                                       // Full URL
+        `"${(r.contact || '').replace(/"/g, '""')}"`,
+        `"${(r.jobTitle || '').replace(/"/g, '""')}"`,
+        `"${(r.title || company || '').replace(/"/g, '""')}"`,
+        `"${company}"`,
+        `"${primaryEmail}"`,
+        `"${allEmails}"`,
+        `"${formattedPhones}"`,
+        `"${cleanSocialMedia}"`,
+        `"${cleanTags}"`,
+        `"${(r.keyword || '').replace(/"/g, '""')}"`,
+        `"${r.url || ''}"`
       ].join(',');
     }).join('\n');
+    
     const csv = csvHeader + csvRows;
     fs.writeFileSync(filename, csv);
     
-    console.log(`[Keyword Scraper] Results written to: ${csvFilename} - Processed ${rows.length} results`);
+    console.log(`[Batch Scraper] Results written to: ${csvFilename}`);
     
-    // Also include the CSV data in the response for client-side download fallback
     res.status(200).json({ 
-      rows, 
+      rows: uniqueRows, 
       csvId: csvFilename,
-      csvData: csv // Include the actual CSV content
+      csvData: csv,
+      summary: {
+        totalResults: uniqueRows.length,
+        keywordsProcessed: keywords.length,
+        duplicatesRemoved: allRows.length - uniqueRows.length
+      }
     });
+    
   } catch (error) {
-    console.error('[Keyword Scraper] Unhandled error:', error.message || error);
+    console.error('[Batch Scraper] Unhandled error:', error.message || error);
     if (browser) { try { await browser.close(); } catch (e) {} }
-    res.status(500).json({ error: 'Scrape failed' });
+    res.status(500).json({ error: 'Batch scrape failed' });
   }
 } 
