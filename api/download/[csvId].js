@@ -10,7 +10,7 @@ export default async function handler(req, res) {
   
   try {
     // Construct the file path - csvId should include the full filename
-    const filePath = join('/tmp', csvId);
+    const filePath = join(process.cwd(), 'output', csvId);
     
     // Check if file exists
     if (!existsSync(filePath)) {
