@@ -14,7 +14,7 @@
   <rect width="1200" height="630" fill="url(#bgGradient)"/>
   
   <!-- Logo -->
-  <text x="600" y="200" text-anchor="middle" fill="#84cc16" font-family="Arial, sans-serif" font-size="48" font-weight="bold">🤖 WINSTON AI</text>
+  <text x="600" y="200" text-anchor="middle" fill="#84cc16" font-family="Arial, sans-serif" font-size="48" font-weight="bold">WINSTON AI</text>
   
   <!-- Main Title -->
   <text x="600" y="280" text-anchor="middle" fill="url(#textGradient)" font-family="Arial, sans-serif" font-size="64" font-weight="900">AI-Powered Lead</text>
