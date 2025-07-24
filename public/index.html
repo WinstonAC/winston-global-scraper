@@ -14,15 +14,15 @@
     <meta property="og:description" content="AI-powered contact extraction tool. Scrape emails, phone numbers, and contact info from any website in seconds. Export to CSV, Excel, or Google Sheets." />
     <meta property="og:url" content="https://scraper.winstonai.io" />
     <meta property="og:site_name" content="Winston AI" />
-    <meta property="og:image" content="https://scraper.winstonai.io/winston-preview.png" />
+    <meta property="og:image" content="https://scraper.winstonai.io/winston-preview.svg" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
     
     <!-- Twitter Card Meta Tags -->
-    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Winston AI Web Scraper" />
     <meta name="twitter:description" content="AI-powered contact extraction tool. Scrape emails, phone numbers, and contact info from any website in seconds." />
-    <meta name="twitter:image" content="https://scraper.winstonai.io/winston-preview.png" />
+    <meta name="twitter:image" content="https://scraper.winstonai.io/winston-preview.svg" />
     
     <!-- Additional Meta Tags -->
     <meta name="description" content="AI-powered web scraper for contact extraction. Find emails, phone numbers, and contact info from any website. Export to CSV, Excel, or Google Sheets." />
@@ -40,6 +40,9 @@
 
     <link rel="icon" href="/favicon.ico" />
 
+    <!-- Winston Core Module -->
+    <script src="/winston-core.js"></script>
+
     <style>
       body { font-family: 'Inter', sans-serif; }
       .gradient-bg {
@@ -48,30 +51,84 @@
           rgba(10,10,25,1) 60%,
           rgba(0,0,0,1) 100%);
       }
+      /* Remove ALL button styling */
+      button {
+        background: none;
+        border: none;
+        outline: none;
+        box-shadow: none;
+        padding: 0;
+        margin: 0;
+      }
+      button:focus, button:active, button:hover {
+        outline: none !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: none !important;
+      }
     </style>
   </head>
 
   <body class="flex flex-col min-h-full">
     <!-- Top nav -->
-    <nav class="w-full bg-gray-900/90 backdrop-blur sticky top-0 z-10">
-      <div class="mx-auto max-w-7xl flex items-center justify-between px-6 h-14">
-        <button id="winstonLogo" class="text-lime-400 font-bold tracking-widest hover:text-lime-300 transition-colors cursor-pointer">WINSTON AI</button>
-        <!-- GitHub link removed for customer-facing UI -->
+    <nav class="w-full bg-gray-900/95 backdrop-blur-md sticky top-0 z-50 border-b border-gray-800/50">
+      <div class="mx-auto max-w-7xl flex items-center justify-between px-6 h-16">
+        <div class="flex items-center space-x-3">
+          <div id="winstonLogo" class="flex items-center space-x-2 text-lime-400 font-bold text-xl tracking-widest hover:text-lime-300 transition-colors duration-300 cursor-pointer">
+            <span class="text-lime-400 text-2xl">🤖</span>
+            <span>WINSTON AI</span>
+          </div>
+          <span class="text-gray-400 text-sm font-medium hidden sm:block">
+            Lead Intelligence Platform
+          </span>
+        </div>
+        <div class="flex items-center space-x-4">
+          <div class="text-xs text-gray-500 hidden md:block">
+            v2.0
+          </div>
+        </div>
       </div>
     </nav>
 
     <!-- Hero / Scraper form -->
-    <header class="flex-1 flex items-center justify-center py-20">
+    <header class="flex-1 flex items-center justify-center py-20 px-4">
       <div
-        class="gradient-bg rounded-3xl shadow-2xl max-w-4xl w-full px-10 py-16 text-center"
+        class="gradient-bg rounded-3xl shadow-2xl max-w-5xl w-full px-8 md:px-12 py-16 text-center"
       >
-        <h1 class="text-5xl md:text-6xl font-extrabold mb-6">
-          AI-Powered Web Scraper
+        <div class="mb-8">
+          <h1 class="text-4xl md:text-6xl font-extrabold mb-4 bg-gradient-to-r from-lime-400 to-green-400 bg-clip-text text-transparent">
+            AI-Powered Lead Intelligence
         </h1>
+          <h2 class="text-xl md:text-2xl font-semibold text-gray-300 mb-4">
+            Find Investors, Partners & Customers in Seconds
+          </h2>
+        </div>
         <!-- Version: 2025-01-27 21:45 -->
-        <p class="text-gray-300 max-w-xl mx-auto mb-10">
-          Fetch contact data from any URL in seconds—stealth mode included. Export to CSV, XLSX, or Google Sheets.
-        </p>
+        <div class="max-w-3xl mx-auto mb-10">
+          <p class="text-gray-300 text-lg leading-relaxed mb-4">
+            Discover high-quality leads with AI-powered categorization. Extract contact data from any source—stealth mode included.
+          </p>
+          <div class="flex flex-wrap justify-center gap-4 text-sm text-lime-300">
+            <span class="flex items-center gap-1">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+              </svg>
+              25+ AI Categories
+            </span>
+            <span class="flex items-center gap-1">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+              </svg>
+              Batch Processing
+            </span>
+            <span class="flex items-center gap-1">
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+              </svg>
+              Export to Sheets
+            </span>
+          </div>
+        </div>
 
         <div class="flex gap-4 mb-4 justify-center">
           <label class="flex items-center gap-1">
@@ -150,19 +207,31 @@
           id="resultsWrapper"
           class="hidden bg-white text-gray-900 border border-blue-400 rounded-xl max-w-5xl mx-auto overflow-hidden"
                   >
-            <div class="bg-white p-4 border-b border-gray-200">
+            <div class="bg-white p-4 border-b border-gray-200 flex justify-between items-center">
               <h2 class="text-2xl font-bold text-gray-900">Contacts</h2>
+              <div id="resultCount" class="text-sm text-gray-600 hidden">
+                <span id="currentCount">0</span> contacts found
+              </div>
             </div>
             <div
               id="resultsBox"
               class="bg-transparent"
             ></div>
+            <div id="loadMoreSection" class="hidden p-4 text-center border-t border-gray-200">
+              <button id="loadMoreBtn" class="bg-lime-500 hover:bg-lime-400 text-gray-900 font-semibold px-6 py-2 rounded-lg transition">
+                Load More Results
+              </button>
+              <div class="text-xs text-gray-500 mt-2">
+                Searching deeper for more contacts...
+              </div>
+            </div>
         </section>
 
         <!-- Loader -->
         <div id="loader" class="hidden mt-6">
+          <div class="flex flex-col items-center space-y-4">
           <svg
-            class="animate-spin h-8 w-8 text-lime-400 mx-auto"
+              class="animate-spin h-10 w-10 text-lime-400"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -181,11 +250,31 @@
               d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
             ></path>
           </svg>
+            <div id="loadingText" class="text-lg font-medium text-lime-400 animate-pulse">
+              Initializing search...
+            </div>
+            <div id="progressBar" class="w-64 h-2 bg-gray-700 rounded-full overflow-hidden">
+              <div id="progressFill" class="h-full bg-gradient-to-r from-lime-400 to-green-500 transition-all duration-500 ease-out" style="width: 0%"></div>
+            </div>
+          </div>
         </div>
       </div>
     </header>
 
+    <!-- Footer -->
+    <footer class="w-full py-4 text-center border-t border-gray-800/30">
+      <div class="text-xs text-gray-500">
+        Powered by <span class="text-gray-400 font-medium">CylonDigital</span>
+      </div>
+    </footer>
+
     <script>
+      // Initialize Winston Scraper
+      const winston = new WinstonScraper({
+        maxBatchKeywords: 5
+      });
+
+      // DOM Elements
       const urlInput = document.getElementById('urlInput');
       const scrapeBtn = document.getElementById('scrapeBtn');
       const loader = document.getElementById('loader');
@@ -195,20 +284,33 @@
       const exportBtn = document.getElementById('exportBtn');
       const exportMenu = document.getElementById('exportMenu');
       const csvBtn = document.getElementById('csvBtn');
-      const clipboardBtn = document.getElementById('clipboardBtn');
       const sheetsBtn = document.getElementById('sheetsBtn');
-      let lastCsvId = null;
-      let mode = 'keyword';
       const batchInput = document.getElementById('batchInput');
+      const emailToggle = document.getElementById('emailToggle');
+      const winstonLogo = document.getElementById('winstonLogo');
+      const resultCount = document.getElementById('resultCount');
+      const currentCount = document.getElementById('currentCount');
+      const loadMoreSection = document.getElementById('loadMoreSection');
+      const loadMoreBtn = document.getElementById('loadMoreBtn');
       
+      let mode = 'keyword';
+      let currentPage = 1;
+      const itemsPerPage = 10; // Default to 10 results per page
+
+      // Mode switching logic
       const modeRadios = document.getElementsByName('mode');
       modeRadios.forEach(radio => {
         radio.addEventListener('change', () => {
           mode = document.querySelector('input[name="mode"]:checked').value;
+          winston.setMode(mode);
+          
           urlInput.value = '';
           batchInput.value = '';
           resultsWrapper.classList.add('hidden');
           exportDropdown.classList.add('hidden');
+          loadMoreSection.classList.add('hidden');
+          currentPage = 1;
+          currentCount.textContent = '0';
           
           // Toggle input visibility
           if (mode === 'batch') {
@@ -227,6 +329,53 @@
         });
       });
 
+      // Professional loading states
+      function startLoadingAnimation() {
+        const loadingText = document.getElementById('loadingText');
+        const progressFill = document.getElementById('progressFill');
+        
+        const progressSteps = [
+          { text: "🔍 Initiating search...", progress: 10 },
+          { text: "🌐 Analyzing web sources...", progress: 30 },
+          { text: "📊 Extracting contact data...", progress: 60 },
+          { text: "🏷️ Applying AI categorization...", progress: 80 },
+          { text: "✨ Finalizing results...", progress: 95 }
+        ];
+        
+        let stepIndex = 0;
+        const updateProgress = () => {
+          if (stepIndex < progressSteps.length) {
+            const step = progressSteps[stepIndex];
+            loadingText.textContent = step.text;
+            progressFill.style.width = `${step.progress}%`;
+            stepIndex++;
+          }
+        };
+        
+        updateProgress();
+        return setInterval(updateProgress, 800);
+      }
+
+      function completeLoading(progressInterval) {
+        clearInterval(progressInterval);
+        const loadingText = document.getElementById('loadingText');
+        const progressFill = document.getElementById('progressFill');
+        
+        loadingText.textContent = "🎉 Search completed successfully!";
+        progressFill.style.width = "100%";
+        
+        return new Promise(resolve => setTimeout(resolve, 800));
+      }
+
+      function resetLoading() {
+        const loadingText = document.getElementById('loadingText');
+        const progressFill = document.getElementById('progressFill');
+        
+        progressFill.style.width = "0%";
+        loadingText.textContent = "Initializing search...";
+      }
+
+      // Main scrape function using Winston module
       async function scrape() {
         let value;
         if (mode === 'batch') {
@@ -234,7 +383,7 @@
           if (!value) return;
         } else {
           value = urlInput.value.trim();
-          if (!value) return;
+        if (!value) return;
         }
 
         scrapeBtn.disabled = true;
@@ -243,361 +392,304 @@
         resultsBox.textContent = '';
         exportDropdown.classList.add('hidden');
         exportMenu.classList.add('hidden');
-        lastCsvId = null;
+        loadMoreSection.classList.add('hidden');
+        currentPage = 1;
+        currentCount.textContent = '0';
+
+        const progressInterval = startLoadingAnimation();
 
         try {
-          let res, data, rows;
-          if (mode === 'batch') {
-            // 🚀 BATCH SEARCH MODE
-            const keywords = value.split('\n').map(k => k.trim()).filter(k => k.length > 0);
-            if (keywords.length === 0) {
-              throw new Error('Please enter at least one keyword');
-            }
-            if (keywords.length > 5) {
-              throw new Error('Maximum 5 keywords allowed per batch');
-            }
-            
-            res = await fetch('/api/batchScrape', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ keywords })
-            });
-            data = await res.json();
-            rows = data.rows;
-            
-            // Show batch summary
-            if (data.summary) {
-              console.log(`🚀 Batch Summary: ${data.summary.totalResults} results from ${data.summary.keywordsProcessed} keywords (${data.summary.duplicatesRemoved} duplicates removed)`);
-            }
-          } else if (mode === 'keyword') {
-            res = await fetch('/api/scrapeKeyword', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ keyword: value })
-            });
-            data = await res.json();
-            rows = data.rows;
-          } else {
-            // 🔧 DIRECT URL MODE - Enhanced validation
-            if (!value.startsWith('http://') && !value.startsWith('https://')) {
-              value = 'https://' + value;
-            }
-            
-            // Validate URL format
-            try {
-              new URL(value);
-            } catch (e) {
-              throw new Error('Please enter a valid URL (e.g., https://example.com)');
-            }
-            
-            res = await fetch('/api/scrape', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ url: value })
-            });
-            data = await res.json();
-            
-            if (!res.ok) {
-              throw new Error(data.error || 'Failed to scrape URL');
-            }
-            
-            // Convert URL scraper response to match keyword scraper format
-            rows = data.contacts ? [{ 
-              title: data.contacts.title || 'Scraped Page',
-              url: value,
-              emails: data.contacts.emails ? data.contacts.emails.join(';') : '',
-              phones: data.contacts.phones ? data.contacts.phones.join(';') : '',
-              tags: 'Corporate',
-              contact: data.contacts.title || '',
-              jobTitle: '',
-              socialMedia: ''
-            }] : [];
-          }
+          const data = await winston.scrape(value, { mode });
+          const rows = data.rows || [];
+          
+          await completeLoading(progressInterval);
 
-          if (!res.ok) {
-            throw new Error(data.error || 'Scrape failed');
-          }
-
+          // Render results using the same table structure
           resultsBox.innerHTML = '';
-          currentRows = rows || []; // Store for client-side export
-          serverCsvData = data.csvData || null; // Store server CSV data
           if (rows && rows.length) {
             const wrapper = document.createElement('div');
-            wrapper.className = 'h-96 overflow-y-auto bg-slate-900 rounded-lg';
+            wrapper.className = 'h-96 overflow-y-auto bg-slate-900 rounded-lg shadow-inner';
             const table = document.createElement('table');
             table.className = 'w-full table-auto';
             table.innerHTML = `
               <thead class="text-left font-semibold border-b border-slate-600/50 sticky top-0 z-10">
                 <tr class="bg-slate-800">
-                  <th class="px-3 py-3 text-sm text-gray-200">Contact Name</th>
-                  <th class="hidden sm:table-cell px-3 py-3 text-sm text-gray-200">Company</th>
-                  <th class="hidden md:table-cell px-3 py-3 text-sm text-gray-200">Website URL</th>
-                  <th class="px-3 py-3 text-sm text-gray-200">Email Address</th>
-                  <th class="hidden sm:table-cell px-3 py-3 text-sm text-gray-200">Phone Number</th>
-                  <th class="hidden lg:table-cell px-3 py-3 text-sm text-gray-200">Tags</th>
+                  <th class="px-4 py-4 text-sm font-semibold text-gray-200">Contact Name</th>
+                  <th class="hidden sm:table-cell px-4 py-4 text-sm font-semibold text-gray-200">Company</th>
+                  <th class="hidden md:table-cell px-4 py-4 text-sm font-semibold text-gray-200">Website URL</th>
+                  <th class="px-4 py-4 text-sm font-semibold text-gray-200">Email Address</th>
+                  <th class="hidden sm:table-cell px-4 py-4 text-sm font-semibold text-gray-200">Phone Number</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-600/30">
-              ${rows.map(r => {
+              ${rows.map((r, index) => {
                 let hostname = '';
                 try { hostname = new URL(r.url).hostname.replace(/^www\./, ''); } catch {}
                 const firstEmail = (r.emails || '').split(';')[0] || '';
                 const firstPhone = (r.phones || '').split(';')[0] || '';
-                const tags = (r.tags || '').split(';').filter(t => t.trim()).map(t => 
-                  `<span class="inline-block bg-blue-600/20 text-blue-300 px-2 py-1 rounded-md text-xs mr-1 mb-1">${t.trim()}</span>`
-                ).join('');
                 
                 return `
-                  <tr class="hover:bg-slate-700/20 transition-colors">
-                    <td class="px-3 py-4 min-w-[120px]">
-                      <div class="font-medium text-white mb-1" title="${r.contact || ''}">${r.contact || 'Unknown'}</div>
+                  <tr class="hover:bg-slate-700/30 transition-all duration-200 group" style="animation: fadeInUp 0.3s ease-out ${index * 0.05}s both">
+                    <td class="px-4 py-4 min-w-[120px]">
+                      <div class="font-semibold text-white mb-1 group-hover:text-lime-300 transition-colors" title="${r.contact || ''}">${r.contact || 'Unknown Contact'}</div>
                       <div class="text-xs text-gray-400 sm:hidden" title="${hostname}">${hostname}</div>
                     </td>
-                    <td class="hidden sm:table-cell px-3 py-4 text-gray-300 min-w-[140px]" title="${hostname}">${hostname}</td>
-                    <td class="hidden md:table-cell px-3 py-4 min-w-[200px]">
-                      <a href="${r.url}" target="_blank" class="text-blue-400 hover:text-blue-300 text-sm break-all" title="${r.url || ''}">${r.url}</a>
+                    <td class="hidden sm:table-cell px-4 py-4 text-gray-300 min-w-[140px] font-medium" title="${hostname}">${hostname}</td>
+                    <td class="hidden md:table-cell px-4 py-4 min-w-[200px]">
+                      <a href="${r.url}" target="_blank" class="text-blue-400 hover:text-blue-300 text-sm break-all transition-colors duration-200 hover:underline" title="${r.url || ''}">${r.url}</a>
                     </td>
-                    <td class="px-3 py-4 min-w-[160px]">
-                      <div class="text-sm text-gray-200 mb-1" title="${firstEmail}">${firstEmail}</div>
-                      ${firstPhone ? `<a href="tel:${firstPhone.replace(/[^\d+]/g, '')}" class="text-xs text-green-400 hover:text-green-300 sm:hidden cursor-pointer" title="Call ${firstPhone}">${firstPhone}</a>` : ''}
+                    <td class="px-4 py-4 min-w-[160px]">
+                      <div class="text-sm text-gray-200 mb-1 font-mono" title="${firstEmail}">${firstEmail}</div>
+                      ${firstPhone ? `<a href="tel:${firstPhone.replace(/[^\d+]/g, '')}" class="text-xs text-green-400 hover:text-green-300 sm:hidden cursor-pointer transition-colors duration-200" title="Call ${firstPhone}">${firstPhone}</a>` : ''}
                     </td>
-                    <td class="hidden sm:table-cell px-3 py-4 text-sm min-w-[120px]">
-                      ${firstPhone ? `<a href="tel:${firstPhone.replace(/[^\d+]/g, '')}" class="text-green-400 hover:text-green-300 cursor-pointer" title="Call ${firstPhone}">${firstPhone}</a>` : ''}
-                    </td>
-                    <td class="hidden lg:table-cell px-3 py-4 min-w-[120px]">
-                      <div class="flex flex-wrap">${tags}</div>
+                    <td class="hidden sm:table-cell px-4 py-4 text-sm min-w-[120px]">
+                      ${firstPhone ? `<a href="tel:${firstPhone.replace(/[^\d+]/g, '')}" class="text-green-400 hover:text-green-300 cursor-pointer transition-colors duration-200 font-mono" title="Call ${firstPhone}">${firstPhone}</a>` : ''}
                     </td>
                   </tr>`;
               }).join('')}
               </tbody>`;
             wrapper.appendChild(table);
             resultsBox.appendChild(wrapper);
+            
+            // Add fade-in animation CSS if not already added
+            if (!document.getElementById('fadeInAnimationStyle')) {
+              const style = document.createElement('style');
+              style.id = 'fadeInAnimationStyle';
+              style.textContent = `
+                @keyframes fadeInUp {
+                  from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                  }
+                  to {
+                    opacity: 1;
+                    transform: translateY(0);
+                  }
+                }
+              `;
+              document.head.appendChild(style);
+            }
           }
+          
           resultsWrapper.classList.remove('hidden');
-          if (data.csvId) {
-            lastCsvId = data.csvId;
+          if (rows && rows.length > 0) {
             exportDropdown.classList.remove('hidden');
-          } else if (rows && rows.length > 0) {
-            // If we have results but no csvId, show export anyway for client-side CSV generation
-            exportDropdown.classList.remove('hidden');
+            currentCount.textContent = rows.length;
+            currentCount.classList.remove('hidden');
           }
+          
         } catch (err) {
-          alert(err.message);
+          clearInterval(progressInterval);
+          // Professional error handling
+          const errorMessage = err.message || 'An unexpected error occurred. Please try again.';
+          
+          resultsBox.innerHTML = `
+            <div class="p-8 text-center">
+              <div class="text-red-400 text-6xl mb-4">⚠️</div>
+              <h3 class="text-xl font-semibold text-white mb-2">Search Encountered an Issue</h3>
+              <p class="text-gray-300 mb-4">${errorMessage}</p>
+              <button onclick="location.reload()" class="bg-lime-500 hover:bg-lime-400 text-gray-900 font-semibold px-6 py-2 rounded-lg transition">
+                Try Again
+              </button>
+            </div>
+          `;
+          resultsWrapper.classList.remove('hidden');
+          currentCount.textContent = '0';
+          currentCount.classList.remove('hidden');
         } finally {
           loader.classList.add('hidden');
           scrapeBtn.disabled = false;
+          resetLoading();
         }
       }
 
+      // Event listeners
       scrapeBtn.addEventListener('click', scrape);
       urlInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') scrape();
       });
+
       // Export dropdown toggle
       exportBtn.addEventListener('click', (e) => {
         e.stopPropagation();
         exportMenu.classList.toggle('hidden');
       });
 
-      // Hide menu when clicking outside
       document.addEventListener('click', () => {
         exportMenu.classList.add('hidden');
       });
 
-      // Export handlers
-      csvBtn.addEventListener('click', async () => {
-        console.log('CSV button clicked, lastCsvId:', lastCsvId, 'serverCsvData length:', serverCsvData?.length);
-        
-        // Always use client-side fallback since server files don't persist in serverless
-        if (serverCsvData) {
-          console.log('Using server CSV data for download');
-          downloadCsvData(serverCsvData, lastCsvId || `winston-results-${Date.now()}.csv`);
-        } else if (currentRows && currentRows.length > 0) {
-          console.log('Generating CSV from current rows');
-          generateClientSideCSV();
-        } else {
-          console.log('No data available for export');
-          alert('No data to export. Please run a search first.');
+      // Export handlers using Winston module
+      csvBtn.addEventListener('click', () => {
+        try {
+          winston.exportCSV();
+        } catch (err) {
+          alert(err.message);
         }
-        
         exportMenu.classList.add('hidden');
       });
 
-      xlsxBtn.addEventListener('click', async () => {
-        console.log('XLSX button clicked');
-        
-        // Since XLSX generation requires additional libraries, fallback to CSV with notification
-        if (serverCsvData) {
+      xlsxBtn.addEventListener('click', () => {
+        try {
           alert('XLSX export is temporarily unavailable. Downloading as CSV instead.');
-          downloadCsvData(serverCsvData, (lastCsvId || `winston-results-${Date.now()}.csv`).replace('.csv', '_excel.csv'));
-        } else if (currentRows && currentRows.length > 0) {
-          alert('XLSX export is temporarily unavailable. Downloading as CSV instead.');
-          const csvData = generateCsvFromRows();
-          downloadCsvData(csvData, `winston-results-excel-${Date.now()}.csv`);
-        } else {
-          alert('No data to export. Please run a search first.');
+          winston.exportCSV(`winston-results-excel-${Date.now()}.csv`);
+        } catch (err) {
+          alert(err.message);
         }
-        
         exportMenu.classList.add('hidden');
       });
 
-      sheetsBtn.addEventListener('click', async () => {
-        console.log('Google Sheets button clicked, lastCsvId:', lastCsvId);
-        
-        // Always use client-side generation for consistency (server files don't persist anyway)
-        generateClientSideSheetsExport();
-        
+      sheetsBtn.addEventListener('click', () => {
+        try {
+          const result = winston.exportToSheets();
+          setTimeout(() => {
+            alert(`📁 ${result.instructions}`);
+          }, 500);
+        } catch (err) {
+          alert(err.message);
+        }
         exportMenu.classList.add('hidden');
       });
 
-      // Client-side CSV generation functions
-      let currentRows = []; // Store current results for client-side export
-      let serverCsvData = null; // Store server-generated CSV data
-
-      function generateClientSideCSV() {
-        console.log('generateClientSideCSV called, serverCsvData exists:', !!serverCsvData);
-        const csvData = serverCsvData || generateCsvFromRows();
-        if (!csvData) {
-          alert('No data to export');
-          return;
-        }
-        
-        console.log('About to download CSV, data length:', csvData.length);
-        downloadCsvData(csvData, `winston-results-${Date.now()}.csv`);
-      }
-
-      function generateClientSideSheetsExport() {
-        const csvData = serverCsvData || generateCsvFromRows();
-        if (!csvData) {
-          alert('No data to export');
-          return;
-        }
-        
-        console.log('Downloading CSV for Google Sheets import');
-        
-        // Download the CSV file for Google Sheets import
-        const filename = `winston-sheets-import-${Date.now()}.csv`;
-        downloadCsvData(csvData, filename);
-        
-        // Show instructions for importing to Google Sheets
-        setTimeout(() => {
-          alert('📁 CSV file downloaded successfully!\n\n📊 To import to Google Sheets:\n1. Go to: https://docs.google.com/spreadsheets/create\n2. Click File → Import\n3. Upload the downloaded CSV file\n4. Choose "Replace spreadsheet" and click Import');
-        }, 500);
-      }
-
-      function downloadCsvData(csvData, filename) {
-        console.log('downloadCsvData called with filename:', filename, 'data length:', csvData?.length);
-        const blob = new Blob([csvData], { type: 'text/csv' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = filename || `winston-results-${Date.now()}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        URL.revokeObjectURL(url);
-        console.log('CSV download triggered');
-      }
-
-      function generateClientSideXLSX(csvData, filename) {
-        // For now, fallback to CSV download with explanation
-        alert('XLSX generation is temporarily unavailable. Downloading as CSV instead.');
-        downloadCsvData(csvData, filename.replace('.csv', '_fallback.csv'));
-      }
-
-      function generateCsvFromRows() {
-        if (!currentRows || currentRows.length === 0) return null;
-        
-        // Create spreadsheet-friendly CSV with better formatting
-        const csvHeader = 'Contact Name,Company/Title,Website,Primary Email,All Emails,Phone Numbers,Tags,Full URL\n';
-        const csvRows = currentRows.map(r => {
-          // Extract primary email (first one)
-          const emailList = (r.emails || '').split(';').filter(e => e.trim());
-          const primaryEmail = emailList[0] || '';
-          const allEmails = emailList.join(', ');
-          
-          // Format phone numbers (first one if multiple)
-          const phoneList = (r.phones || '').split(';').filter(p => p.trim());
-          const formattedPhones = phoneList.map(p => {
-            // Basic phone formatting for US numbers
-            if (p.length === 10) return `(${p.slice(0,3)}) ${p.slice(3,6)}-${p.slice(6)}`;
-            if (p.length === 11 && p.startsWith('1')) return `+1 (${p.slice(1,4)}) ${p.slice(4,7)}-${p.slice(7)}`;
-            return p;
-          }).join(', ');
-          
-          // Extract company name from URL
-          let company = '';
-          try {
-            company = new URL(r.url).hostname.replace(/^www\./, '');
-          } catch {}
-          
-          // Clean tags
-          const cleanTags = (r.tags || '').split(';').filter(t => t.trim()).join(', ');
-          
-          return [
-            `"${(r.contact || '').replace(/"/g, '""')}"`,           // Contact Name
-            `"${(r.title || company || '').replace(/"/g, '""')}"`,  // Company/Title
-            `"${company}"`,                                          // Website
-            `"${primaryEmail}"`,                                     // Primary Email
-            `"${allEmails}"`,                                        // All Emails
-            `"${formattedPhones}"`,                                  // Phone Numbers
-            `"${cleanTags}"`,                                        // Tags
-            `"${r.url || ''}"`                                       // Full URL
-          ].join(',');
-        });
-        
-        return csvHeader + csvRows.join('\n');
-      }
-
-      // ---- EMAIL COLUMN VISIBILITY TOGGLE ----
-      function toggleEmailColumn(show) {
-        document
-          .querySelectorAll('#resultsWrapper table')
-          .forEach(tbl => {
-            // Toggle email header (4th column: Contact Name=0, Company=1, Website URL=2, Email Address=3)
+      // Email column visibility toggle
+      emailToggle.addEventListener('change', () => {
+        const show = emailToggle.checked;
+        document.querySelectorAll('#resultsWrapper table').forEach(tbl => {
             const emailHeaders = tbl.querySelectorAll('thead th:nth-child(4)');
             emailHeaders.forEach(th => th.style.display = show ? '' : 'none');
             
-            // Toggle email cells in all rows
             const emailCells = tbl.querySelectorAll('tbody td:nth-child(4)');
             emailCells.forEach(td => td.style.display = show ? '' : 'none');
           });
-      }
-      const emailToggle = document.getElementById('emailToggle');
-      emailToggle.addEventListener('change', () =>
-        toggleEmailColumn(emailToggle.checked)
-      );
+      });
 
-      // ---- WINSTON AI LOGO CLEAR/RESET FUNCTIONALITY ----
-      const winstonLogo = document.getElementById('winstonLogo');
+      // Load more functionality
+      loadMoreBtn.addEventListener('click', async () => {
+        loadMoreBtn.disabled = true;
+        loadMoreSection.classList.remove('hidden');
+        loader.classList.remove('hidden');
+        resultsBox.textContent = '';
+        exportDropdown.classList.add('hidden');
+        exportMenu.classList.add('hidden');
+
+        const progressInterval = startLoadingAnimation();
+
+        try {
+          const data = await winston.scrape(value, { mode, page: currentPage + 1 });
+          const rows = data.rows || [];
+
+          await completeLoading(progressInterval);
+
+          resultsBox.innerHTML += `
+            <div class="h-96 overflow-y-auto bg-slate-900 rounded-lg shadow-inner">
+              <table class="w-full table-auto">
+                <thead class="text-left font-semibold border-b border-slate-600/50 sticky top-0 z-10">
+                  <tr class="bg-slate-800">
+                    <th class="px-4 py-4 text-sm font-semibold text-gray-200">Contact Name</th>
+                    <th class="hidden sm:table-cell px-4 py-4 text-sm font-semibold text-gray-200">Company</th>
+                    <th class="hidden md:table-cell px-4 py-4 text-sm font-semibold text-gray-200">Website URL</th>
+                    <th class="px-4 py-4 text-sm font-semibold text-gray-200">Email Address</th>
+                    <th class="hidden sm:table-cell px-4 py-4 text-sm font-semibold text-gray-200">Phone Number</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-600/30">
+                ${rows.map((r, index) => {
+                  let hostname = '';
+                  try { hostname = new URL(r.url).hostname.replace(/^www\./, ''); } catch {}
+                  const firstEmail = (r.emails || '').split(';')[0] || '';
+                  const firstPhone = (r.phones || '').split(';')[0] || '';
+                  
+                  return `
+                    <tr class="hover:bg-slate-700/30 transition-all duration-200 group" style="animation: fadeInUp 0.3s ease-out ${index * 0.05}s both">
+                      <td class="px-4 py-4 min-w-[120px]">
+                        <div class="font-semibold text-white mb-1 group-hover:text-lime-300 transition-colors" title="${r.contact || ''}">${r.contact || 'Unknown Contact'}</div>
+                        <div class="text-xs text-gray-400 sm:hidden" title="${hostname}">${hostname}</div>
+                      </td>
+                      <td class="hidden sm:table-cell px-4 py-4 text-gray-300 min-w-[140px] font-medium" title="${hostname}">${hostname}</td>
+                      <td class="hidden md:table-cell px-4 py-4 min-w-[200px]">
+                        <a href="${r.url}" target="_blank" class="text-blue-400 hover:text-blue-300 text-sm break-all transition-colors duration-200 hover:underline" title="${r.url || ''}">${r.url}</a>
+                      </td>
+                      <td class="px-4 py-4 min-w-[160px]">
+                        <div class="text-sm text-gray-200 mb-1 font-mono" title="${firstEmail}">${firstEmail}</div>
+                        ${firstPhone ? `<a href="tel:${firstPhone.replace(/[^\d+]/g, '')}" class="text-xs text-green-400 hover:text-green-300 sm:hidden cursor-pointer transition-colors duration-200" title="Call ${firstPhone}">${firstPhone}</a>` : ''}
+                      </td>
+                      <td class="hidden sm:table-cell px-4 py-4 text-sm min-w-[120px]">
+                        ${firstPhone ? `<a href="tel:${firstPhone.replace(/[^\d+]/g, '')}" class="text-green-400 hover:text-green-300 cursor-pointer transition-colors duration-200 font-mono" title="Call ${firstPhone}">${firstPhone}</a>` : ''}
+                      </td>
+                    </tr>`;
+                }).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+          currentPage++;
+          currentCount.textContent = rows.length + (currentPage - 1) * itemsPerPage;
+          currentCount.classList.remove('hidden');
+
+          // Add fade-in animation CSS if not already added
+          if (!document.getElementById('fadeInAnimationStyle')) {
+            const style = document.createElement('style');
+            style.id = 'fadeInAnimationStyle';
+            style.textContent = `
+              @keyframes fadeInUp {
+                from {
+                  opacity: 0;
+                  transform: translateY(20px);
+                }
+                to {
+                  opacity: 1;
+                  transform: translateY(0);
+                }
+              }
+            `;
+            document.head.appendChild(style);
+          }
+
+        } catch (err) {
+          clearInterval(progressInterval);
+          const errorMessage = err.message || 'An unexpected error occurred. Please try again.';
+          resultsBox.innerHTML = `
+            <div class="p-8 text-center">
+              <div class="text-red-400 text-6xl mb-4">⚠️</div>
+              <h3 class="text-xl font-semibold text-white mb-2">Search Encountered an Issue</h3>
+              <p class="text-gray-300 mb-4">${errorMessage}</p>
+              <button onclick="location.reload()" class="bg-lime-500 hover:bg-lime-400 text-gray-900 font-semibold px-6 py-2 rounded-lg transition">
+                Try Again
+              </button>
+            </div>
+          `;
+          loadMoreSection.classList.add('hidden');
+          loadMoreBtn.disabled = false;
+        } finally {
+          loader.classList.add('hidden');
+          loadMoreBtn.disabled = false;
+          resetLoading();
+        }
+      });
+
+      // Winston logo clear/reset functionality
       winstonLogo.addEventListener('click', () => {
-        // Clear input field
         urlInput.value = '';
-        
-        // Hide results and export
+        batchInput.value = '';
         resultsWrapper.classList.add('hidden');
         exportDropdown.classList.add('hidden');
         exportMenu.classList.add('hidden');
-        
-        // Clear results content
+        loadMoreSection.classList.add('hidden');
         resultsBox.innerHTML = '';
-        
-        // Reset button states
         scrapeBtn.disabled = false;
         loader.classList.add('hidden');
         
-        // Clear stored data
-        lastCsvId = null;
-        currentRows = [];
-        serverCsvData = null;
+        winston.clearResults();
         
-        // Reset to keyword mode
         document.querySelector('input[value="keyword"]').checked = true;
         mode = 'keyword';
+        winston.setMode('keyword');
         
-        // Focus on input for immediate use
+        urlInput.classList.remove('hidden');
+        batchInput.classList.add('hidden');
+        urlInput.placeholder = '🔍 Enter keyword or search term (e.g., women venture capital)';
+        
         urlInput.focus();
-        
         console.log('Winston AI: Interface cleared and reset');
       });
     </script>

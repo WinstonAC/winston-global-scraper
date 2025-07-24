@@ -1,0 +1,33 @@
+<svg width="1200" height="630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1e293b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f172a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="textGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" style="stop-color:#84cc16;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#22c55e;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="1200" height="630" fill="url(#bgGradient)"/>
+  
+  <!-- Logo -->
+  <text x="600" y="200" text-anchor="middle" fill="#84cc16" font-family="Arial, sans-serif" font-size="48" font-weight="bold">🤖 WINSTON AI</text>
+  
+  <!-- Main Title -->
+  <text x="600" y="280" text-anchor="middle" fill="url(#textGradient)" font-family="Arial, sans-serif" font-size="64" font-weight="900">AI-Powered Lead</text>
+  <text x="600" y="340" text-anchor="middle" fill="url(#textGradient)" font-family="Arial, sans-serif" font-size="64" font-weight="900">Intelligence</text>
+  
+  <!-- Subtitle -->
+  <text x="600" y="390" text-anchor="middle" fill="#e2e8f0" font-family="Arial, sans-serif" font-size="28">Find Investors, Partners &amp; Customers in Seconds</text>
+  
+  <!-- Features -->
+  <text x="300" y="480" text-anchor="middle" fill="#84cc16" font-family="Arial, sans-serif" font-size="18">✓ 25+ AI Categories</text>
+  <text x="600" y="480" text-anchor="middle" fill="#84cc16" font-family="Arial, sans-serif" font-size="18">✓ Batch Processing</text>
+  <text x="900" y="480" text-anchor="middle" fill="#84cc16" font-family="Arial, sans-serif" font-size="18">✓ Export to Sheets</text>
+  
+  <!-- URL -->
+  <text x="600" y="550" text-anchor="middle" fill="#64748b" font-family="Arial, sans-serif" font-size="16">scraper.winstonai.io</text>
+</svg> 

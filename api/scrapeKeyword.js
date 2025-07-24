@@ -153,7 +153,7 @@ export default async function handler(req, res) {
     try {
       links = await page.evaluate(() => {
         const anchors = Array.from(document.querySelectorAll('a[data-testid="result-title-a"]'));
-        return anchors.slice(0, 15).map(a => ({ title: a.innerText, url: a.href })); // Increased to 15 for more results
+        return anchors.slice(0, 25).map(a => ({ title: a.innerText, url: a.href })); // Increased from 15 to 25 for more results
       });
       console.log('[Keyword Scraper] Found', links.length, 'results');
     } catch (err) {
