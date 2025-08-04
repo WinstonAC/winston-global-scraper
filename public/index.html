@@ -164,7 +164,7 @@
         </div>
 
         <!-- Use Case Selection -->
-        <div class="mb-6">
+        <div class="mb-6 px-4 sm:px-0">
           <label class="block text-sm font-medium text-gray-300 mb-3">Choose Your Use Case:</label>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             <button type="button" class="use-case-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg p-3 text-left transition-colors" data-use-case="investors">
@@ -187,7 +187,7 @@
         </div>
 
         <!-- Industry Selection (Hidden by default) -->
-        <div id="industrySelection" class="mb-6 hidden">
+        <div id="industrySelection" class="mb-6 hidden px-4 sm:px-0">
           <label class="block text-sm font-medium text-gray-300 mb-3">Select Industry:</label>
           <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
             <button type="button" class="industry-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm transition-colors" data-industry="saas">SaaS/Tech</button>
@@ -247,7 +247,7 @@
           </label>
         </div>
         <div
-          class="flex flex-col sm:flex-row gap-4 items-center justify-center mb-12"
+          class="flex flex-col sm:flex-row gap-4 items-center justify-center mb-12 px-4 sm:px-0"
         >
           <input
             id="urlInput"
@@ -599,7 +599,7 @@
         </div>
 
         <!-- Expandable Guide Content -->
-        <div id="quickstart-guide" class="hidden mt-8 bg-gray-800 rounded-lg p-8 border border-gray-700">
+        <div id="quickstart-guide" class="hidden mt-8 bg-gray-800 rounded-lg p-8 border border-gray-700 transform transition-all duration-500 ease-in-out opacity-0 scale-95">
           <h3 class="text-2xl font-semibold text-white mb-6">Quick Start Guide</h3>
           <div class="space-y-6 text-gray-300">
             <div>
@@ -652,7 +652,7 @@
           <button onclick="toggleGuide('quickstart')" class="mt-6 text-lime-400 hover:text-lime-300 font-semibold">← Close Guide</button>
         </div>
 
-        <div id="api-guide" class="hidden mt-8 bg-gray-800 rounded-lg p-8 border border-gray-700">
+        <div id="api-guide" class="hidden mt-8 bg-gray-800 rounded-lg p-8 border border-gray-700 transform transition-all duration-500 ease-in-out opacity-0 scale-95">
           <h3 class="text-2xl font-semibold text-white mb-6">API Documentation</h3>
           <div class="space-y-6 text-gray-300">
             <div>
@@ -692,7 +692,7 @@
           <button onclick="toggleGuide('api')" class="mt-6 text-lime-400 hover:text-lime-300 font-semibold">← Close API Docs</button>
         </div>
 
-        <div id="community-guide" class="hidden mt-8 bg-gray-800 rounded-lg p-8 border border-gray-700">
+        <div id="community-guide" class="hidden mt-8 bg-gray-800 rounded-lg p-8 border border-gray-700 transform transition-all duration-500 ease-in-out opacity-0 scale-95">
           <h3 class="text-2xl font-semibold text-white mb-6">Community Support</h3>
           <div class="space-y-6 text-gray-300">
             <div>
@@ -727,7 +727,7 @@
           <button onclick="toggleGuide('community')" class="mt-6 text-lime-400 hover:text-lime-300 font-semibold">← Close Community</button>
         </div>
 
-        <div id="videos-guide" class="hidden mt-8 bg-gray-800 rounded-lg p-8 border border-gray-700">
+        <div id="videos-guide" class="hidden mt-8 bg-gray-800 rounded-lg p-8 border border-gray-700 transform transition-all duration-500 ease-in-out opacity-0 scale-95">
           <h3 class="text-2xl font-semibold text-white mb-6">Video Tutorials</h3>
           <div class="space-y-6 text-gray-300">
             <div>
@@ -819,30 +819,30 @@
           <div>
             <h4 class="text-white font-semibold mb-4">Product</h4>
             <ul class="text-gray-400 text-sm space-y-2">
-              <li><a href="#" class="hover:text-lime-400">Features</a></li>
-              <li><a href="#" class="hover:text-lime-400">Use Cases</a></li>
-              <li><a href="#" class="hover:text-lime-400">Pricing</a></li>
-              <li><a href="#" class="hover:text-lime-400">API</a></li>
+              <li><a href="#features" class="hover:text-lime-400">Features</a></li>
+              <li><a href="#use-cases" class="hover:text-lime-400">Use Cases</a></li>
+              <li><a href="#pricing" class="hover:text-lime-400">Pricing</a></li>
+              <li><a href="#docs" class="hover:text-lime-400">API</a></li>
             </ul>
           </div>
           
           <div>
             <h4 class="text-white font-semibold mb-4">Support</h4>
             <ul class="text-gray-400 text-sm space-y-2">
-              <li><a href="#" class="hover:text-lime-400">Documentation</a></li>
-              <li><a href="#" class="hover:text-lime-400">Help Center</a></li>
-              <li><a href="#" class="hover:text-lime-400">Community</a></li>
-              <li><a href="#" class="hover:text-lime-400">Contact</a></li>
+              <li><a href="#docs" class="hover:text-lime-400">Documentation</a></li>
+              <li><a href="#docs" class="hover:text-lime-400">Help Center</a></li>
+              <li><a href="#docs" class="hover:text-lime-400">Community</a></li>
+              <li><a href="mailto:support@winstonai.io" class="hover:text-lime-400">Contact</a></li>
             </ul>
           </div>
           
           <div>
             <h4 class="text-white font-semibold mb-4">Company</h4>
             <ul class="text-gray-400 text-sm space-y-2">
-              <li><a href="#" class="hover:text-lime-400">About</a></li>
-              <li><a href="#" class="hover:text-lime-400">Blog</a></li>
-              <li><a href="#" class="hover:text-lime-400">Careers</a></li>
-              <li><a href="#" class="hover:text-lime-400">Privacy</a></li>
+              <li><a href="#about" class="hover:text-lime-400">About</a></li>
+              <li><a href="https://blog.winstonai.io" class="hover:text-lime-400">Blog</a></li>
+              <li><a href="mailto:careers@winstonai.io" class="hover:text-lime-400">Careers</a></li>
+              <li><a href="/privacy" class="hover:text-lime-400">Privacy</a></li>
             </ul>
           </div>
         </div>
@@ -1509,15 +1509,24 @@
         const guides = ['quickstart', 'api', 'community', 'videos'];
         const guideElements = guides.map(type => document.getElementById(`${type}-guide`));
         
-        // Hide all guides first
+        // Hide all guides first with animation
         guideElements.forEach(element => {
-          if (element) element.classList.add('hidden');
+          if (element) {
+            element.classList.add('opacity-0', 'scale-95');
+            setTimeout(() => {
+              element.classList.add('hidden');
+            }, 300);
+          }
         });
         
-        // Show the selected guide
+        // Show the selected guide with smooth animation
         const selectedGuide = document.getElementById(`${guideType}-guide`);
         if (selectedGuide) {
           selectedGuide.classList.remove('hidden');
+          setTimeout(() => {
+            selectedGuide.classList.remove('opacity-0', 'scale-95');
+            selectedGuide.classList.add('opacity-100', 'scale-100');
+          }, 50);
           selectedGuide.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }
