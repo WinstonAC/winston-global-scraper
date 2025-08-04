@@ -58,6 +58,9 @@ function validatePhoneNumber(phone) {
     /^[0-9]{8}$/,            // 8-digit numbers (often dates)
     /^[0-9]{6}$/,            // 6-digit numbers (often dates)
     /^[0-9]{4}$/,            // 4-digit numbers (often years)
+    /^8[0]{9}$/,             // 8000000000 pattern
+    /^9[0-9]{9}$/,           // 9-digit numbers starting with 9
+    /^[0-9]{7}$/,            // 7-digit numbers (often dates)
   ];
   
   for (const pattern of timestampPatterns) {
@@ -70,11 +73,27 @@ function validatePhoneNumber(phone) {
   // Reject numbers that are sequential
   if (/0123456789|1234567890|9876543210|0987654321/.test(digits)) return false;
   
+  // Reject numbers that look like dates (common patterns)
+  if (/^(19|20)\d{6}$/.test(digits)) return false; // YYYYMMDD format
+  if (/^\d{8}$/.test(digits) && parseInt(digits) > 19000000) return false; // Likely date
+  
   // Validate country codes for international numbers
   if (digits.length > 10) {
     const countryCode = digits.slice(0, -10);
     const validCountryCodes = ['1', '44', '33', '49', '81', '86', '91', '61', '55', '7', '34', '39', '31', '46', '47', '45', '358', '46', '47', '45'];
     if (!validCountryCodes.includes(countryCode)) return false;
+  }
+  
+  // Additional validation for US numbers
+  if (digits.length === 10) {
+    // Reject numbers that look like dates or common patterns
+    if (digits.startsWith('800') || digits.startsWith('888') || digits.startsWith('877')) {
+      // Allow toll-free numbers
+      return true;
+    }
+    // Reject numbers that are too round or suspicious
+    if (/^[0-9]{2}0{8}$/.test(digits)) return false; // XX00000000
+    if (/^[0-9]{3}0{7}$/.test(digits)) return false; // XXX0000000
   }
   
   return true;
@@ -102,10 +121,10 @@ function findContactName($, firstEmail, targetUrl) {
     
     // Enhanced name patterns for business contacts
     const namePatterns = [
-      /([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,4})(?:\s*,?\s*(CEO|CTO|CFO|COO|Founder|Co-Founder|Partner|Director|Manager|VP|President|Investor|Owner|Executive|Principal))/i,
-      /(CEO|CTO|CFO|COO|Founder|Co-Founder|Partner|Director|Manager|VP|President|Investor|Owner|Executive|Principal)[\s:,-]+([A-Z][a-z]+\s+[A-Z][a-z]+)/i,
+      /([A-Z][a-z]+(?:\s+[A-Z][a-z]+){1,4})(?:\s*,?\s*(CEO|CTO|CFO|COO|Founder|Co-Founder|Partner|Director|Manager|VP|President|Investor))/i,
+      /(CEO|CTO|CFO|COO|Founder|Co-Founder|Partner|Director|Manager|VP|President|Investor)[\s:,-]+([A-Z][a-z]+\s+[A-Z][a-z]+)/i,
       /Contact[\s:]+([A-Z][a-z]+\s+[A-Z][a-z]+)/i,
-      /([A-Z][a-z]+\s+[A-Z][a-z]+)[\s,-]+(?:CEO|CTO|CFO|COO|Founder|Co-Founder|Partner|Director|Manager|VP|President|Investor|Owner|Executive|Principal)/i
+      /([A-Z][a-z]+\s+[A-Z][a-z]+)[\s,-]+(?:CEO|CTO|CFO|COO|Founder|Co-Founder|Partner|Director|Manager|VP|President|Investor)/i
     ];
     
     for (const pattern of namePatterns) {
@@ -118,12 +137,30 @@ function findContactName($, firstEmail, targetUrl) {
     }
   }
   
-  // Method 2: Search entire page for business contact patterns
+  // Method 2: Search entire page for business contact patterns (avoiding articles)
   if (!name) {
     const bodyText = $('body').text();
+    
+    // Filter out article-related content
+    const articlePatterns = [
+      /by\s+([A-Z][a-z]+\s+[A-Z][a-z]+)/gi,  // "By John Smith" - article author
+      /written\s+by\s+([A-Z][a-z]+\s+[A-Z][a-z]+)/gi,  // "Written by John Smith"
+      /author:\s*([A-Z][a-z]+\s+[A-Z][a-z]+)/gi,  // "Author: John Smith"
+      /reporter:\s*([A-Z][a-z]+\s+[A-Z][a-z]+)/gi,  // "Reporter: John Smith"
+      /contributor:\s*([A-Z][a-z]+\s+[A-Z][a-z]+)/gi,  // "Contributor: John Smith"
+    ];
+    
+    // Skip if this looks like an article
+    for (const pattern of articlePatterns) {
+      if (pattern.test(bodyText)) {
+        console.log('[Contact Extraction] Detected article content, skipping author extraction');
+        break;
+      }
+    }
+    
     const businessContactPatterns = [
-      /(?:CEO|CTO|CFO|COO|Founder|Co-Founder|Partner|Director|Manager|VP|President|Investor|Owner|Executive|Principal)[\s:,-]+([A-Z][a-z]+\s+[A-Z][a-z]+)/gi,
-      /([A-Z][a-z]+\s+[A-Z][a-z]+)[\s,-]+(?:CEO|CTO|CFO|COO|Founder|Co-Founder|Partner|Director|Manager|VP|President|Investor|Owner|Executive|Principal)/gi,
+      /(?:CEO|CTO|CFO|COO|Founder|Co-Founder|Partner|Director|Manager|VP|President|Investor)[\s:,-]+([A-Z][a-z]+\s+[A-Z][a-z]+)/gi,
+      /([A-Z][a-z]+\s+[A-Z][a-z]+)[\s,-]+(?:CEO|CTO|CFO|COO|Founder|Co-Founder|Partner|Director|Manager|VP|President|Investor)/gi,
       /(?:Contact|Email|Reach)[\s:]+([A-Z][a-z]+\s+[A-Z][a-z]+)/gi,
       /([A-Z][a-z]+\s+[A-Z][a-z]+)[\s,-]+(?:@|email|contact)/gi
     ];
@@ -141,21 +178,51 @@ function findContactName($, firstEmail, targetUrl) {
     }
   }
   
-  // Method 3: Check meta tags
+  // Method 3: Check meta tags (avoid article authors)
   if (!name) {
-    name = $('meta[name="author"]').attr('content')?.trim();
-  }
-  if (!name) {
-    name = $('meta[property="og:author"]').attr('content')?.trim();
+    const authorMeta = $('meta[name="author"]').attr('content')?.trim();
+    const ogAuthor = $('meta[property="og:author"]').attr('content')?.trim();
+    
+    // Only use meta author if it doesn't look like an article author
+    if (authorMeta && !authorMeta.includes('Reporter') && !authorMeta.includes('Contributor')) {
+      name = authorMeta;
+    } else if (ogAuthor && !ogAuthor.includes('Reporter') && !ogAuthor.includes('Contributor')) {
+      name = ogAuthor;
+    }
   }
   
-  // Method 4: Extract from title or heading
+  // Method 4: Extract from title or heading (avoid article titles)
   if (!name) {
     const title = $('title').text();
     const h1 = $('h1').first().text();
-    const nameFromTitle = (title + ' ' + h1).match(/([A-Z][a-z]+\s+[A-Z][a-z]+)/);
-    if (nameFromTitle) {
-      name = nameFromTitle[1];
+    
+    // Skip if this looks like an article title
+    const articleTitlePatterns = [
+      /how\s+/i,
+      /why\s+/i,
+      /what\s+/i,
+      /the\s+best/i,
+      /top\s+\d+/i,
+      /list\s+of/i,
+      /meet\s+the/i,
+      /interview\s+with/i,
+      /profile:\s+/i,
+    ];
+    
+    const titleText = title + ' ' + h1;
+    let isArticle = false;
+    for (const pattern of articleTitlePatterns) {
+      if (pattern.test(titleText)) {
+        isArticle = true;
+        break;
+      }
+    }
+    
+    if (!isArticle) {
+      const nameFromTitle = titleText.match(/([A-Z][a-z]+\s+[A-Z][a-z]+)/);
+      if (nameFromTitle) {
+        name = nameFromTitle[1];
+      }
     }
   }
   
@@ -178,7 +245,19 @@ function calculateQualityScore(row) {
   
   // Name quality (30 points)
   if (row.contact && row.contact !== 'Unknown Contact' && !row.contact.includes('.')) {
-    score += 30;
+    // Check if this looks like a real business contact vs article author
+    const contactName = row.contact.toLowerCase();
+    const isArticleAuthor = contactName.includes('reporter') || 
+                           contactName.includes('author') || 
+                           contactName.includes('contributor') ||
+                           contactName.includes('writer') ||
+                           contactName.includes('journalist');
+    
+    if (!isArticleAuthor) {
+      score += 30;
+    } else {
+      score += 5; // Very low score for article authors
+    }
   } else if (row.contact && row.contact !== 'Unknown Contact') {
     score += 15; // Partial credit for company names
   }
@@ -196,7 +275,39 @@ function calculateQualityScore(row) {
     score += 10;
   }
   
-  return score;
+  // Penalty for article content (reduce score significantly)
+  const title = (row.title || '').toLowerCase();
+  const url = (row.url || '').toLowerCase();
+  const isArticleContent = title.includes('how ') || 
+                          title.includes('why ') || 
+                          title.includes('what ') || 
+                          title.includes('the best') || 
+                          title.includes('top ') || 
+                          title.includes('list of') || 
+                          title.includes('meet the') || 
+                          title.includes('interview') || 
+                          title.includes('profile') ||
+                          url.includes('/articles/') ||
+                          url.includes('/news/') ||
+                          url.includes('/blog/') ||
+                          url.includes('/stories/');
+  
+  if (isArticleContent) {
+    score = Math.max(0, score - 30); // Heavy penalty for article content
+  }
+  
+  // Bonus for business-focused content
+  const isBusinessContent = url.includes('/about/') || 
+                           url.includes('/team/') || 
+                           url.includes('/leadership/') || 
+                           url.includes('/contact/') ||
+                           url.includes('/careers/');
+  
+  if (isBusinessContent) {
+    score += 15; // Bonus for business pages
+  }
+  
+  return Math.max(0, Math.min(100, score)); // Ensure score is between 0-100
 }
 
 async function bingFallback(keyword) { 
