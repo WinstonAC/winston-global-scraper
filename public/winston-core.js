@@ -10,6 +10,8 @@ class WinstonScraper {
       apiBaseUrl: config.apiBaseUrl || '',
       defaultMode: config.defaultMode || 'keyword',
       maxBatchKeywords: config.maxBatchKeywords || 5,
+      searchDepth: config.searchDepth || 'balanced', // fast, balanced, thorough
+      qualityFilter: config.qualityFilter || 'good', // all, good, excellent
       ...config
     };
     
@@ -32,25 +34,38 @@ class WinstonScraper {
    */
   async scrape(input, options = {}) {
     const mode = options.mode || this.mode;
+    const searchDepth = options.searchDepth || this.config.searchDepth;
+    const qualityFilter = options.qualityFilter || this.config.qualityFilter;
+    const page = options.page || 1;
+    const limit = options.limit || 50;
     
     try {
       let response, data;
       
       switch (mode) {
         case 'batch':
-          response = await this.batchSearch(input);
+          response = await this.batchSearch(input, { searchDepth, qualityFilter, page, limit });
           break;
         case 'url':
-          response = await this.urlScrape(input);
+          response = await this.urlScrape(input, { searchDepth, qualityFilter, page, limit });
           break;
         case 'keyword':
         default:
-          response = await this.keywordSearch(input);
+          response = await this.keywordSearch(input, { searchDepth, qualityFilter, page, limit });
           break;
       }
       
-      // Store results for export
-      this.currentRows = response.rows || [];
+      // Apply quality filtering
+      if (response.rows) {
+        response.rows = this.filterByQuality(response.rows, qualityFilter);
+      }
+      
+      // Store results for export (accumulate across pages)
+      if (page === 1) {
+        this.currentRows = response.rows || [];
+      } else {
+        this.currentRows = this.currentRows.concat(response.rows || []);
+      }
       this.serverCsvData = response.csvData || null;
       this.lastCsvId = response.csvId || null;
       
@@ -61,13 +76,33 @@ class WinstonScraper {
   }
 
   /**
+   * Filter results by quality score
+   */
+  filterByQuality(rows, qualityFilter) {
+    switch (qualityFilter) {
+      case 'excellent':
+        return rows.filter(row => (row.qualityScore || 0) >= 60);
+      case 'good':
+        return rows.filter(row => (row.qualityScore || 0) >= 40);
+      case 'all':
+      default:
+        return rows;
+    }
+  }
+
+  /**
    * Keyword search implementation
    */
-  async keywordSearch(keyword) {
+  async keywordSearch(keyword, options = {}) {
     const response = await fetch('/api/scrapeKeyword', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keyword })
+      body: JSON.stringify({ 
+        keyword,
+        searchDepth: options.searchDepth || this.config.searchDepth,
+        page: options.page || 1,
+        limit: options.limit || 50
+      })
     });
     
     if (!response.ok) {
@@ -81,7 +116,7 @@ class WinstonScraper {
   /**
    * Batch search implementation
    */
-  async batchSearch(keywords) {
+  async batchSearch(keywords, options = {}) {
     if (typeof keywords === 'string') {
       keywords = keywords.split('\n').map(k => k.trim()).filter(k => k.length > 0);
     }
@@ -97,7 +132,11 @@ class WinstonScraper {
     const response = await fetch('/api/batchScrape', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ keywords })
+      body: JSON.stringify({ 
+        keywords,
+        searchDepth: options.searchDepth || this.config.searchDepth,
+        qualityFilter: options.qualityFilter || this.config.qualityFilter
+      })
     });
     
     if (!response.ok) {
@@ -111,7 +150,7 @@ class WinstonScraper {
   /**
    * URL scraping implementation
    */
-  async urlScrape(url) {
+  async urlScrape(url, options = {}) {
     // Auto-add https if not present
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = 'https://' + url;
@@ -127,7 +166,11 @@ class WinstonScraper {
     const response = await fetch('/api/scrape', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ url })
+      body: JSON.stringify({ 
+        url,
+        searchDepth: options.searchDepth || this.config.searchDepth,
+        qualityFilter: options.qualityFilter || this.config.qualityFilter
+      })
     });
     
     if (!response.ok) {

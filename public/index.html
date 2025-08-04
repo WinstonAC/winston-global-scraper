@@ -139,7 +139,7 @@
           </label>
           <label class="flex items-center gap-1">
             <input type="radio" name="mode" value="batch" />
-            🚀 Batch Search
+            Batch Search
           </label>
           <label class="flex items-center gap-1">
             <input type="radio" name="mode" value="url" />
@@ -150,6 +150,26 @@
             Include e-mails
           </label>
         </div>
+        
+        <!-- Search Depth Configuration -->
+        <div class="flex gap-4 mb-4 justify-center items-center">
+          <label class="flex items-center gap-2 text-sm">
+            <span>Search Depth:</span>
+            <select id="searchDepth" class="bg-gray-800 text-white border border-gray-600 rounded px-2 py-1 text-xs">
+              <option value="fast">Fast (8 pages)</option>
+              <option value="balanced" selected>Balanced (12 pages)</option>
+              <option value="thorough">Thorough (16 pages)</option>
+            </select>
+          </label>
+          <label class="flex items-center gap-2 text-sm">
+            <span>Quality Filter:</span>
+            <select id="qualityFilter" class="bg-gray-800 text-white border border-gray-600 rounded px-2 py-1 text-xs">
+              <option value="all">All Results</option>
+              <option value="good" selected>Good+ (40+ score)</option>
+              <option value="excellent">Excellent (60+ score)</option>
+            </select>
+          </label>
+        </div>
         <div
           class="flex flex-col sm:flex-row gap-4 items-center justify-center mb-12"
         >
@@ -157,7 +177,7 @@
             id="urlInput"
             type="text"
             required
-            placeholder="Enter keyword or URL"
+            placeholder="Example: Tech founders who help early-stage startups"
             class="w-full sm:w-96 px-4 py-2 rounded-lg bg-white text-gray-900 border border-blue-400 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           <textarea
@@ -213,6 +233,7 @@
               <h2 class="text-2xl font-bold text-gray-900">Contacts</h2>
               <div id="resultCount" class="text-sm text-gray-600 hidden">
                 <span id="currentCount">0</span> contacts found
+                <span id="paginationInfo" class="ml-2 text-gray-500"></span>
               </div>
             </div>
             <div
@@ -221,10 +242,13 @@
             ></div>
             <div id="loadMoreSection" class="hidden p-4 text-center border-t border-gray-200">
               <button id="loadMoreBtn" class="bg-lime-500 hover:bg-lime-400 text-gray-900 font-semibold px-6 py-2 rounded-lg transition">
-                Load More Results
+                Load More Contacts
               </button>
               <div class="text-xs text-gray-500 mt-2">
-                Searching deeper for more contacts...
+                <span id="loadMoreInfo">Searching deeper for more contacts...</span>
+              </div>
+              <div class="text-xs text-gray-400 mt-1">
+                <span id="totalResultsInfo"></span>
               </div>
             </div>
         </section>
@@ -294,10 +318,17 @@
       const currentCount = document.getElementById('currentCount');
       const loadMoreSection = document.getElementById('loadMoreSection');
       const loadMoreBtn = document.getElementById('loadMoreBtn');
+      const searchDepth = document.getElementById('searchDepth');
+      const qualityFilter = document.getElementById('qualityFilter');
+      const paginationInfo = document.getElementById('paginationInfo');
+      const loadMoreInfo = document.getElementById('loadMoreInfo');
+      const totalResultsInfo = document.getElementById('totalResultsInfo');
       
       let mode = 'keyword';
       let currentPage = 1;
-      const itemsPerPage = 10; // Default to 10 results per page
+      let totalResults = 0;
+      let totalPages = 0;
+      const itemsPerPage = 50; // Default to 50 results per page
 
       // Mode switching logic
       const modeRadios = document.getElementsByName('mode');
@@ -313,19 +344,22 @@
           loadMoreSection.classList.add('hidden');
           currentPage = 1;
           currentCount.textContent = '0';
+          paginationInfo.textContent = '';
+          loadMoreInfo.textContent = 'Searching deeper for more contacts...';
+          totalResultsInfo.textContent = '';
           
           // Toggle input visibility
           if (mode === 'batch') {
             urlInput.classList.add('hidden');
             batchInput.classList.remove('hidden');
-            batchInput.placeholder = '🚀 Enter keywords (one per line):\nwomen in stem investors\nfemale tech entrepreneurs\ndiversity venture capital\nwomen startup founders\nfemale angel investors';
+            batchInput.placeholder = 'Enter keywords (one per line):\nwomen in stem investors\nfemale tech entrepreneurs\ndiversity venture capital\nwomen startup founders\nfemale angel investors';
           } else {
             urlInput.classList.remove('hidden');
             batchInput.classList.add('hidden');
             if (mode === 'url') {
-              urlInput.placeholder = '🌐 Enter website URL (e.g., https://all-raise.org)';
+              urlInput.placeholder = 'Enter website URL (e.g., https://all-raise.org)';
             } else {
-              urlInput.placeholder = '🔍 Enter keyword or search term (e.g., women venture capital)';
+              urlInput.placeholder = 'Example: Tech founders who help early-stage startups';
             }
           }
         });
@@ -337,11 +371,11 @@
         const progressFill = document.getElementById('progressFill');
         
         const progressSteps = [
-          { text: "🔍 Initiating search...", progress: 10 },
-          { text: "🌐 Analyzing web sources...", progress: 30 },
-          { text: "📊 Extracting contact data...", progress: 60 },
-          { text: "🏷️ Applying AI categorization...", progress: 80 },
-          { text: "✨ Finalizing results...", progress: 95 }
+          { text: "Initiating search...", progress: 10 },
+          { text: "Analyzing web sources...", progress: 30 },
+          { text: "Extracting contact data...", progress: 60 },
+          { text: "Applying AI categorization...", progress: 80 },
+          { text: "Finalizing results...", progress: 95 }
         ];
         
         let stepIndex = 0;
@@ -363,7 +397,7 @@
         const loadingText = document.getElementById('loadingText');
         const progressFill = document.getElementById('progressFill');
         
-        loadingText.textContent = "🎉 Search completed successfully!";
+        loadingText.textContent = "Search completed successfully!";
         progressFill.style.width = "100%";
         
         return new Promise(resolve => setTimeout(resolve, 800));
@@ -397,12 +431,21 @@
         loadMoreSection.classList.add('hidden');
         currentPage = 1;
         currentCount.textContent = '0';
+        paginationInfo.textContent = '';
+        loadMoreInfo.textContent = 'Searching deeper for more contacts...';
+        totalResultsInfo.textContent = '';
 
         const progressInterval = startLoadingAnimation();
 
         try {
-          const data = await winston.scrape(value, { mode });
+          const data = await winston.scrape(value, { 
+            mode,
+            searchDepth: searchDepth.value,
+            qualityFilter: qualityFilter.value
+          });
           const rows = data.rows || [];
+          totalResults = data.totalResults || 0;
+          totalPages = data.totalPages || 0;
           
           await completeLoading(progressInterval);
 
@@ -421,6 +464,7 @@
                   <th class="hidden md:table-cell px-4 py-4 text-sm font-semibold text-gray-200">Website URL</th>
                   <th class="px-4 py-4 text-sm font-semibold text-gray-200">Email Address</th>
                   <th class="hidden sm:table-cell px-4 py-4 text-sm font-semibold text-gray-200">Phone Number</th>
+                  <th class="hidden lg:table-cell px-4 py-4 text-sm font-semibold text-gray-200">Quality Score</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-slate-600/30">
@@ -429,6 +473,21 @@
                 try { hostname = new URL(r.url).hostname.replace(/^www\./, ''); } catch {}
                 const firstEmail = (r.emails || '').split(';')[0] || '';
                 const firstPhone = (r.phones || '').split(';')[0] || '';
+                const qualityScore = r.qualityScore || 0;
+                
+                // Quality score color coding
+                let qualityColor = 'text-gray-400';
+                let qualityText = 'Low';
+                if (qualityScore >= 80) {
+                  qualityColor = 'text-green-400';
+                  qualityText = 'Excellent';
+                } else if (qualityScore >= 60) {
+                  qualityColor = 'text-yellow-400';
+                  qualityText = 'Good';
+                } else if (qualityScore >= 40) {
+                  qualityColor = 'text-orange-400';
+                  qualityText = 'Fair';
+                }
                 
                 return `
                   <tr class="hover:bg-slate-700/30 transition-all duration-200 group" style="animation: fadeInUp 0.3s ease-out ${index * 0.05}s both">
@@ -446,6 +505,12 @@
                     </td>
                     <td class="hidden sm:table-cell px-4 py-4 text-sm min-w-[120px]">
                       ${firstPhone ? `<a href="tel:${firstPhone.replace(/[^\d+]/g, '')}" class="text-green-400 hover:text-green-300 cursor-pointer transition-colors duration-200 font-mono" title="Call ${firstPhone}">${firstPhone}</a>` : ''}
+                    </td>
+                    <td class="hidden lg:table-cell px-4 py-4 text-sm min-w-[100px]">
+                      <div class="flex items-center gap-2">
+                        <span class="${qualityColor} font-semibold">${qualityScore}</span>
+                        <span class="text-xs ${qualityColor}">${qualityText}</span>
+                      </div>
                     </td>
                   </tr>`;
               }).join('')}
@@ -478,6 +543,13 @@
             exportDropdown.classList.remove('hidden');
             currentCount.textContent = rows.length;
             currentCount.classList.remove('hidden');
+            updatePaginationInfo();
+            
+            // Show Load More button if there are more results available
+            if (data.pagination?.hasMore) {
+              loadMoreSection.classList.remove('hidden');
+              loadMoreInfo.textContent = `Found ${data.pagination.totalResults} total results. Click "Load More Results" to see the next ${itemsPerPage} contacts.`;
+            }
           }
           
         } catch (err) {
@@ -498,6 +570,9 @@
           resultsWrapper.classList.remove('hidden');
           currentCount.textContent = '0';
           currentCount.classList.remove('hidden');
+          paginationInfo.textContent = '';
+          loadMoreInfo.textContent = '';
+          totalResultsInfo.textContent = '';
         } finally {
           loader.classList.add('hidden');
           scrapeBtn.disabled = false;
@@ -545,7 +620,7 @@
         try {
           const result = winston.exportToSheets();
           setTimeout(() => {
-            alert(`📁 ${result.instructions}`);
+            alert(`${result.instructions}`);
           }, 500);
         } catch (err) {
           alert(err.message);
@@ -570,81 +645,91 @@
         loadMoreBtn.disabled = true;
         loadMoreSection.classList.remove('hidden');
         loader.classList.remove('hidden');
-        resultsBox.textContent = '';
         exportDropdown.classList.add('hidden');
         exportMenu.classList.add('hidden');
 
         const progressInterval = startLoadingAnimation();
 
         try {
-          const data = await winston.scrape(value, { mode, page: currentPage + 1 });
+          const data = await winston.scrape(value, { 
+            mode, 
+            page: currentPage + 1,
+            searchDepth: searchDepth.value,
+            qualityFilter: qualityFilter.value
+          });
           const rows = data.rows || [];
+          totalResults = data.pagination?.totalResults || 0;
+          totalPages = data.pagination?.totalPages || 0;
 
           await completeLoading(progressInterval);
 
-          resultsBox.innerHTML += `
-            <div class="h-96 overflow-y-auto bg-slate-900 rounded-lg shadow-inner">
-              <table class="w-full table-auto">
-                <thead class="text-left font-semibold border-b border-slate-600/50 sticky top-0 z-10">
-                  <tr class="bg-slate-800">
-                    <th class="px-4 py-4 text-sm font-semibold text-gray-200">Contact Name</th>
-                    <th class="hidden sm:table-cell px-4 py-4 text-sm font-semibold text-gray-200">Company</th>
-                    <th class="hidden md:table-cell px-4 py-4 text-sm font-semibold text-gray-200">Website URL</th>
-                    <th class="px-4 py-4 text-sm font-semibold text-gray-200">Email Address</th>
-                    <th class="hidden sm:table-cell px-4 py-4 text-sm font-semibold text-gray-200">Phone Number</th>
-                  </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-600/30">
-                ${rows.map((r, index) => {
-                  let hostname = '';
-                  try { hostname = new URL(r.url).hostname.replace(/^www\./, ''); } catch {}
-                  const firstEmail = (r.emails || '').split(';')[0] || '';
-                  const firstPhone = (r.phones || '').split(';')[0] || '';
-                  
-                  return `
-                    <tr class="hover:bg-slate-700/30 transition-all duration-200 group" style="animation: fadeInUp 0.3s ease-out ${index * 0.05}s both">
-                      <td class="px-4 py-4 min-w-[120px]">
-                        <div class="font-semibold text-white mb-1 group-hover:text-lime-300 transition-colors" title="${r.contact || ''}">${r.contact || 'Unknown Contact'}</div>
-                        <div class="text-xs text-gray-400 sm:hidden" title="${hostname}">${hostname}</div>
-                      </td>
-                      <td class="hidden sm:table-cell px-4 py-4 text-gray-300 min-w-[140px] font-medium" title="${hostname}">${hostname}</td>
-                      <td class="hidden md:table-cell px-4 py-4 min-w-[200px]">
-                        <a href="${r.url}" target="_blank" class="text-blue-400 hover:text-blue-300 text-sm break-all transition-colors duration-200 hover:underline" title="${r.url || ''}">${r.url}</a>
-                      </td>
-                      <td class="px-4 py-4 min-w-[160px]">
-                        <div class="text-sm text-gray-200 mb-1 font-mono" title="${firstEmail}">${firstEmail}</div>
-                        ${firstPhone ? `<a href="tel:${firstPhone.replace(/[^\d+]/g, '')}" class="text-xs text-green-400 hover:text-green-300 sm:hidden cursor-pointer transition-colors duration-200" title="Call ${firstPhone}">${firstPhone}</a>` : ''}
-                      </td>
-                      <td class="hidden sm:table-cell px-4 py-4 text-sm min-w-[120px]">
-                        ${firstPhone ? `<a href="tel:${firstPhone.replace(/[^\d+]/g, '')}" class="text-green-400 hover:text-green-300 cursor-pointer transition-colors duration-200 font-mono" title="Call ${firstPhone}">${firstPhone}</a>` : ''}
-                      </td>
-                    </tr>`;
-                }).join('')}
-                </tbody>
-              </table>
-            </div>
-          `;
-          currentPage++;
-          currentCount.textContent = rows.length + (currentPage - 1) * itemsPerPage;
-          currentCount.classList.remove('hidden');
-
-          // Add fade-in animation CSS if not already added
-          if (!document.getElementById('fadeInAnimationStyle')) {
-            const style = document.createElement('style');
-            style.id = 'fadeInAnimationStyle';
-            style.textContent = `
-              @keyframes fadeInUp {
-                from {
-                  opacity: 0;
-                  transform: translateY(20px);
-                }
-                to {
-                  opacity: 1;
-                  transform: translateY(0);
-                }
+          // Add new results to existing table instead of creating new table
+          const existingTable = resultsBox.querySelector('table tbody');
+          if (existingTable && rows.length > 0) {
+            const newRows = rows.map((r, index) => {
+              let hostname = '';
+              try { hostname = new URL(r.url).hostname.replace(/^www\./, ''); } catch {}
+              const firstEmail = (r.emails || '').split(';')[0] || '';
+              const firstPhone = (r.phones || '').split(';')[0] || '';
+              const qualityScore = r.qualityScore || 0;
+              
+              // Quality score color coding
+              let qualityColor = 'text-gray-400';
+              let qualityText = 'Low';
+              if (qualityScore >= 80) {
+                qualityColor = 'text-green-400';
+                qualityText = 'Excellent';
+              } else if (qualityScore >= 60) {
+                qualityColor = 'text-yellow-400';
+                qualityText = 'Good';
+              } else if (qualityScore >= 40) {
+                qualityColor = 'text-orange-400';
+                qualityText = 'Fair';
               }
-            `;
-            document.head.appendChild(style);
+              
+              return `
+                <tr class="hover:bg-slate-700/30 transition-all duration-200 group" style="animation: fadeInUp 0.3s ease-out ${index * 0.05}s both">
+                  <td class="px-4 py-4 min-w-[120px]">
+                    <div class="font-semibold text-white mb-1 group-hover:text-lime-300 transition-colors" title="${r.contact || ''}">${r.contact || 'Unknown Contact'}</div>
+                    <div class="text-xs text-gray-400 sm:hidden" title="${hostname}">${hostname}</div>
+                  </td>
+                  <td class="hidden sm:table-cell px-4 py-4 text-gray-300 min-w-[140px] font-medium" title="${hostname}">${hostname}</td>
+                  <td class="hidden md:table-cell px-4 py-4 min-w-[200px]">
+                    <a href="${r.url}" target="_blank" class="text-blue-400 hover:text-blue-300 text-sm break-all transition-colors duration-200 hover:underline" title="${r.url || ''}">${r.url}</a>
+                  </td>
+                  <td class="px-4 py-4 min-w-[160px]">
+                    <div class="text-sm text-gray-200 mb-1 font-mono" title="${firstEmail}">${firstEmail}</div>
+                    ${firstPhone ? `<a href="tel:${firstPhone.replace(/[^\d+]/g, '')}" class="text-xs text-green-400 hover:text-green-300 sm:hidden cursor-pointer transition-colors duration-200" title="Call ${firstPhone}">${firstPhone}</a>` : ''}
+                  </td>
+                  <td class="hidden sm:table-cell px-4 py-4 text-sm min-w-[120px]">
+                    ${firstPhone ? `<a href="tel:${firstPhone.replace(/[^\d+]/g, '')}" class="text-green-400 hover:text-green-300 cursor-pointer transition-colors duration-200 font-mono" title="Call ${firstPhone}">${firstPhone}</a>` : ''}
+                  </td>
+                  <td class="hidden lg:table-cell px-4 py-4 text-sm min-w-[100px]">
+                    <div class="flex items-center gap-2">
+                      <span class="${qualityColor} font-semibold">${qualityScore}</span>
+                      <span class="text-xs ${qualityColor}">${qualityText}</span>
+                    </div>
+                  </td>
+                </tr>`;
+            }).join('');
+            
+            existingTable.insertAdjacentHTML('beforeend', newRows);
+          }
+          
+          currentPage++;
+          const totalDisplayed = (currentPage - 1) * itemsPerPage + rows.length;
+          currentCount.textContent = totalDisplayed;
+          currentCount.classList.remove('hidden');
+          updatePaginationInfo();
+          
+          // Show export button if we have results
+          if (totalDisplayed > 0) {
+            exportDropdown.classList.remove('hidden');
+          }
+          
+          // Hide load more button if no more pages
+          if (!data.pagination?.hasMore) {
+            loadMoreSection.classList.add('hidden');
           }
 
         } catch (err) {
@@ -689,11 +774,27 @@
         
         urlInput.classList.remove('hidden');
         batchInput.classList.add('hidden');
-        urlInput.placeholder = '🔍 Enter keyword or search term (e.g., women venture capital)';
+                      urlInput.placeholder = 'Enter keyword or search term (e.g., women venture capital)';
         
         urlInput.focus();
         console.log('Winston AI: Interface cleared and reset');
       });
+
+      function updatePaginationInfo() {
+        if (totalResults === 0) {
+          paginationInfo.textContent = '';
+          loadMoreInfo.textContent = '';
+          totalResultsInfo.textContent = '';
+          return;
+        }
+
+        const start = (currentPage - 1) * itemsPerPage + 1;
+        const end = Math.min(start + itemsPerPage - 1, totalResults);
+
+        paginationInfo.textContent = `Showing ${start} to ${end} of ${totalResults} results`;
+        loadMoreInfo.textContent = `Searching deeper for more contacts...`;
+        totalResultsInfo.textContent = `Total results: ${totalResults}`;
+      }
     </script>
   </body>
 </html> 
