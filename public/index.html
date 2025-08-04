@@ -168,19 +168,19 @@
           <label class="block text-sm font-medium text-gray-300 mb-3">Choose Your Use Case:</label>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
             <button type="button" class="use-case-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg p-3 text-left transition-colors" data-use-case="investors">
-              <div class="text-lime-400 font-semibold text-sm">💰 Investor Discovery</div>
+              <div class="text-lime-400 font-semibold text-sm">Investor Discovery</div>
               <div class="text-gray-400 text-xs mt-1">Find angel investors, VCs, and advisors</div>
             </button>
             <button type="button" class="use-case-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg p-3 text-left transition-colors" data-use-case="partners">
-              <div class="text-lime-400 font-semibold text-sm">🤝 Partner Matching</div>
+              <div class="text-lime-400 font-semibold text-sm">Partner Matching</div>
               <div class="text-gray-400 text-xs mt-1">Find strategic partners and collaborators</div>
             </button>
             <button type="button" class="use-case-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg p-3 text-left transition-colors" data-use-case="customers">
-              <div class="text-lime-400 font-semibold text-sm">🎯 Customer Acquisition</div>
+              <div class="text-lime-400 font-semibold text-sm">Customer Acquisition</div>
               <div class="text-gray-400 text-xs mt-1">Find decision makers at target companies</div>
             </button>
             <button type="button" class="use-case-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg p-3 text-left transition-colors" data-use-case="custom">
-              <div class="text-lime-400 font-semibold text-sm">🔍 Custom Search</div>
+              <div class="text-lime-400 font-semibold text-sm">Custom Search</div>
               <div class="text-gray-400 text-xs mt-1">Enter your own search terms</div>
             </button>
           </div>
@@ -379,31 +379,31 @@
         
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <div class="text-lime-400 text-3xl mb-4">🔍</div>
+            <div class="text-lime-400 text-3xl mb-4">AI</div>
             <h3 class="text-xl font-semibold text-white mb-3">AI-Powered Search</h3>
             <p class="text-gray-400">Advanced algorithms find the most relevant contacts based on your specific criteria and industry focus.</p>
           </div>
           
           <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <div class="text-lime-400 text-3xl mb-4">✅</div>
+            <div class="text-lime-400 text-3xl mb-4">✓</div>
             <h3 class="text-xl font-semibold text-white mb-3">Contact Verification</h3>
             <p class="text-gray-400">Automatically verify email addresses, phone numbers, and job titles to ensure data quality.</p>
           </div>
           
           <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <div class="text-lime-400 text-3xl mb-4">📊</div>
+            <div class="text-lime-400 text-3xl mb-4">★</div>
             <h3 class="text-xl font-semibold text-white mb-3">Lead Scoring</h3>
             <p class="text-gray-400">AI-powered scoring system ranks contacts by relevance, reachability, and engagement potential.</p>
           </div>
           
           <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <div class="text-lime-400 text-3xl mb-4">🔗</div>
+            <div class="text-lime-400 text-3xl mb-4">⚡</div>
             <h3 class="text-xl font-semibold text-white mb-3">CRM Integration</h3>
             <p class="text-gray-400">Seamlessly export to HubSpot, Salesforce, Pipedrive, and other popular CRM platforms.</p>
           </div>
           
           <div class="bg-gray-800 rounded-lg p-6 border border-gray-700">
-            <div class="text-lime-400 text-3xl mb-4">📧</div>
+            <div class="text-lime-400 text-3xl mb-4">✉</div>
             <h3 class="text-xl font-semibold text-white mb-3">Email Sequences</h3>
             <p class="text-gray-400">Generate personalized outreach templates and track email performance automatically.</p>
           </div>
@@ -545,8 +545,8 @@
         <p class="text-xl text-gray-400 mb-12">Comprehensive documentation and guides to help you succeed</p>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
-            <div class="text-lime-400 text-3xl mb-4">📖</div>
+          <div class="bg-gray-900 rounded-lg p-6 border border-gray-700 cursor-pointer hover:border-lime-400 transition-colors" onclick="toggleGuide('quickstart')">
+            <div class="text-lime-400 text-3xl mb-4">📚</div>
             <h3 class="text-xl font-semibold text-white mb-3">Quick Start Guide</h3>
             <p class="text-gray-400 mb-4">Get up and running in under 5 minutes. Learn how to find your first 50 leads with step-by-step instructions.</p>
             <div class="space-y-2 text-sm text-gray-300">
@@ -555,10 +555,11 @@
               <div>• Enter your search terms</div>
               <div>• Export results to CSV or CRM</div>
             </div>
+            <div class="mt-4 text-lime-400 font-semibold">Click to expand guide →</div>
           </div>
           
-          <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
-            <div class="text-lime-400 text-3xl mb-4">🔧</div>
+          <div class="bg-gray-900 rounded-lg p-6 border border-gray-700 cursor-pointer hover:border-lime-400 transition-colors" onclick="toggleGuide('api')">
+            <div class="text-lime-400 text-3xl mb-4">⚙</div>
             <h3 class="text-xl font-semibold text-white mb-3">API Documentation</h3>
             <p class="text-gray-400 mb-4">Integrate Winston AI into your existing workflows with our REST API.</p>
             <div class="space-y-2 text-sm text-gray-300">
@@ -567,10 +568,11 @@
               <div>• Webhook support</div>
               <div>• SDK examples (Node.js, Python)</div>
             </div>
+            <div class="mt-4 text-lime-400 font-semibold">Click to view API docs →</div>
           </div>
           
-          <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
-            <div class="text-lime-400 text-3xl mb-4">💬</div>
+          <div class="bg-gray-900 rounded-lg p-6 border border-gray-700 cursor-pointer hover:border-lime-400 transition-colors" onclick="toggleGuide('community')">
+            <div class="text-lime-400 text-3xl mb-4">👥</div>
             <h3 class="text-xl font-semibold text-white mb-3">Community Support</h3>
             <p class="text-gray-400 mb-4">Join our community of founders and growth hackers for tips and best practices.</p>
             <div class="space-y-2 text-sm text-gray-300">
@@ -579,10 +581,11 @@
               <div>• User-generated templates</div>
               <div>• Success stories & case studies</div>
             </div>
+            <div class="mt-4 text-lime-400 font-semibold">Click to join community →</div>
           </div>
           
-          <div class="bg-gray-900 rounded-lg p-6 border border-gray-700">
-            <div class="text-lime-400 text-3xl mb-4">🎥</div>
+          <div class="bg-gray-900 rounded-lg p-6 border border-gray-700 cursor-pointer hover:border-lime-400 transition-colors" onclick="toggleGuide('videos')">
+            <div class="text-lime-400 text-3xl mb-4">▶</div>
             <h3 class="text-xl font-semibold text-white mb-3">Video Tutorials</h3>
             <p class="text-gray-400 mb-4">Step-by-step video guides for every feature and use case.</p>
             <div class="space-y-2 text-sm text-gray-300">
@@ -591,7 +594,181 @@
               <div>• CRM integration setup</div>
               <div>• Best practices & tips</div>
             </div>
+            <div class="mt-4 text-lime-400 font-semibold">Click to watch videos →</div>
           </div>
+        </div>
+
+        <!-- Expandable Guide Content -->
+        <div id="quickstart-guide" class="hidden mt-8 bg-gray-800 rounded-lg p-8 border border-gray-700">
+          <h3 class="text-2xl font-semibold text-white mb-6">Quick Start Guide</h3>
+          <div class="space-y-6 text-gray-300">
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">Step 1: Choose Your Use Case</h4>
+              <p>Select from four main use cases:</p>
+              <ul class="ml-6 mt-2 space-y-1">
+                <li>• <strong>Investor Discovery:</strong> Find angel investors, VCs, and advisors</li>
+                <li>• <strong>Partner Matching:</strong> Find strategic partners and collaborators</li>
+                <li>• <strong>Customer Acquisition:</strong> Find decision makers at target companies</li>
+                <li>• <strong>Custom Search:</strong> Enter your own search terms</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">Step 2: Select Your Industry</h4>
+              <p>Choose from 8 industries to focus your search:</p>
+              <ul class="ml-6 mt-2 space-y-1">
+                <li>• SaaS/Tech, Healthcare, Finance, E-commerce</li>
+                <li>• Education, Real Estate, Consulting, Manufacturing</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">Step 3: Configure Search Parameters</h4>
+              <ul class="ml-6 mt-2 space-y-1">
+                <li>• <strong>Search Depth:</strong> Fast (4 pages), Balanced (6 pages), or Thorough (8 pages)</li>
+                <li>• <strong>Quality Filter:</strong> All results, Good+ (40+ score), or Excellent (60+ score)</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">Step 4: Enter Your Search Terms</h4>
+              <p>Use specific, targeted keywords. Examples:</p>
+              <ul class="ml-6 mt-2 space-y-1">
+                <li>• "angel investors in fintech"</li>
+                <li>• "decision makers at SaaS companies"</li>
+                <li>• "healthcare technology partners"</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">Step 5: Export Your Results</h4>
+              <ul class="ml-6 mt-2 space-y-1">
+                <li>• Download as CSV for manual import</li>
+                <li>• Use our CRM integrations (coming soon)</li>
+                <li>• Copy contacts directly to your clipboard</li>
+              </ul>
+            </div>
+          </div>
+          <button onclick="toggleGuide('quickstart')" class="mt-6 text-lime-400 hover:text-lime-300 font-semibold">← Close Guide</button>
+        </div>
+
+        <div id="api-guide" class="hidden mt-8 bg-gray-800 rounded-lg p-8 border border-gray-700">
+          <h3 class="text-2xl font-semibold text-white mb-6">API Documentation</h3>
+          <div class="space-y-6 text-gray-300">
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">Authentication</h4>
+              <p>All API requests require an API key in the header:</p>
+              <div class="bg-gray-900 p-3 rounded mt-2 font-mono text-sm">
+                Authorization: Bearer YOUR_API_KEY
+              </div>
+            </div>
+            
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">Search Endpoint</h4>
+              <div class="bg-gray-900 p-3 rounded mt-2 font-mono text-sm">
+                POST /api/scrapeKeyword<br>
+                Content-Type: application/json
+              </div>
+            </div>
+            
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">Rate Limits</h4>
+              <ul class="ml-6 mt-2 space-y-1">
+                <li>• Free tier: 50 requests/month</li>
+                <li>• Pro tier: 500 requests/month</li>
+                <li>• Business tier: 2,000 requests/month</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">Webhooks</h4>
+              <p>Receive real-time notifications when searches complete:</p>
+              <div class="bg-gray-900 p-3 rounded mt-2 font-mono text-sm">
+                POST /webhooks/search-complete<br>
+                { "search_id": "123", "results_count": 45 }
+              </div>
+            </div>
+          </div>
+          <button onclick="toggleGuide('api')" class="mt-6 text-lime-400 hover:text-lime-300 font-semibold">← Close API Docs</button>
+        </div>
+
+        <div id="community-guide" class="hidden mt-8 bg-gray-800 rounded-lg p-8 border border-gray-700">
+          <h3 class="text-2xl font-semibold text-white mb-6">Community Support</h3>
+          <div class="space-y-6 text-gray-300">
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">Discord Community</h4>
+              <p>Join 500+ founders and growth hackers:</p>
+              <div class="bg-gray-900 p-3 rounded mt-2">
+                <a href="#" class="text-lime-400 hover:text-lime-300">Join Discord Server →</a>
+              </div>
+            </div>
+            
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">Weekly Office Hours</h4>
+              <ul class="ml-6 mt-2 space-y-1">
+                <li>• Every Tuesday at 2 PM EST</li>
+                <li>• Live Q&A with the Winston AI team</li>
+                <li>• Share your success stories</li>
+                <li>• Get help with advanced use cases</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">User-Generated Templates</h4>
+              <p>Access templates created by the community:</p>
+              <ul class="ml-6 mt-2 space-y-1">
+                <li>• Email outreach sequences</li>
+                <li>• Search term templates by industry</li>
+                <li>• CRM import templates</li>
+                <li>• Success case studies</li>
+              </ul>
+            </div>
+          </div>
+          <button onclick="toggleGuide('community')" class="mt-6 text-lime-400 hover:text-lime-300 font-semibold">← Close Community</button>
+        </div>
+
+        <div id="videos-guide" class="hidden mt-8 bg-gray-800 rounded-lg p-8 border border-gray-700">
+          <h3 class="text-2xl font-semibold text-white mb-6">Video Tutorials</h3>
+          <div class="space-y-6 text-gray-300">
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">Getting Started (5 min)</h4>
+              <p>Complete walkthrough of your first search:</p>
+              <div class="bg-gray-900 p-3 rounded mt-2">
+                <a href="#" class="text-lime-400 hover:text-lime-300">Watch Getting Started →</a>
+              </div>
+            </div>
+            
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">Advanced Search Techniques (8 min)</h4>
+              <ul class="ml-6 mt-2 space-y-1">
+                <li>• Boolean search operators</li>
+                <li>• Industry-specific keywords</li>
+                <li>• Quality filtering strategies</li>
+                <li>• Batch search optimization</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">CRM Integration Setup (12 min)</h4>
+              <ul class="ml-6 mt-2 space-y-1">
+                <li>• HubSpot integration walkthrough</li>
+                <li>• Salesforce setup guide</li>
+                <li>• Custom webhook configuration</li>
+                <li>• Data mapping best practices</li>
+              </ul>
+            </div>
+            
+            <div>
+              <h4 class="text-lime-400 font-semibold mb-2">Best Practices & Tips (10 min)</h4>
+              <ul class="ml-6 mt-2 space-y-1">
+                <li>• Avoiding common search mistakes</li>
+                <li>• Maximizing result quality</li>
+                <li>• Scaling your lead generation</li>
+                <li>• Compliance and best practices</li>
+              </ul>
+            </div>
+          </div>
+          <button onclick="toggleGuide('videos')" class="mt-6 text-lime-400 hover:text-lime-300 font-semibold">← Close Videos</button>
         </div>
       </div>
     </section>
@@ -604,19 +781,19 @@
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
           <div>
-            <div class="text-lime-400 text-3xl mb-4">🎯</div>
+            <div class="text-lime-400 text-3xl mb-4">★</div>
             <h3 class="text-xl font-semibold text-white mb-3">Our Mission</h3>
             <p class="text-gray-400">Make lead generation accessible, accurate, and efficient for businesses of all sizes.</p>
           </div>
           
           <div>
-            <div class="text-lime-400 text-3xl mb-4">🚀</div>
+            <div class="text-lime-400 text-3xl mb-4">⚡</div>
             <h3 class="text-xl font-semibold text-white mb-3">Our Vision</h3>
             <p class="text-gray-400">Transform how businesses find and connect with their ideal customers and partners.</p>
           </div>
           
           <div>
-            <div class="text-lime-400 text-3xl mb-4">💡</div>
+            <div class="text-lime-400 text-3xl mb-4">✦</div>
             <h3 class="text-xl font-semibold text-white mb-3">Our Values</h3>
             <p class="text-gray-400">Innovation, transparency, and customer success drive everything we do.</p>
           </div>
@@ -1226,9 +1403,10 @@
             // Show/hide industry selection
             if (selectedUseCase !== 'custom') {
               industrySelection.classList.remove('hidden');
-              updatePlaceholder();
+              updateSearchInput();
             } else {
               industrySelection.classList.add('hidden');
+              urlInput.value = '';
               urlInput.placeholder = 'Enter your custom search terms...';
             }
           });
@@ -1248,12 +1426,12 @@
             btn.classList.add('border-lime-400', 'bg-gray-700');
             
             selectedIndustry = btn.dataset.industry;
-            updatePlaceholder();
+            updateSearchInput();
           });
         });
 
-        // Update placeholder based on use case and industry
-        function updatePlaceholder() {
+        // Update search input based on use case and industry
+        function updateSearchInput() {
           const useCaseExamples = {
             investors: {
               saas: 'angel investors in SaaS and fintech',
@@ -1288,10 +1466,37 @@
           };
 
           if (selectedUseCase !== 'custom' && selectedIndustry && useCaseExamples[selectedUseCase]?.[selectedIndustry]) {
-            urlInput.placeholder = `Example: ${useCaseExamples[selectedUseCase][selectedIndustry]}`;
+            // Auto-populate the search bar
+            urlInput.value = useCaseExamples[selectedUseCase][selectedIndustry];
+            urlInput.classList.add('bg-lime-100', 'border-lime-400');
+            urlInput.placeholder = 'Click to edit search terms...';
+            
+            // Add subtle animation and visual feedback
+            urlInput.style.transition = 'all 0.3s ease';
+            urlInput.style.boxShadow = '0 0 0 3px rgba(132, 204, 22, 0.1)';
+            
+            // Show auto-fill indicator
+            const indicator = document.createElement('div');
+            indicator.id = 'autoFillIndicator';
+            indicator.className = 'absolute right-4 top-1/2 transform -translate-y-1/2 text-xs text-lime-400 bg-lime-900/50 px-2 py-1 rounded z-10';
+            indicator.textContent = 'Auto-filled';
+            urlInput.parentElement.style.position = 'relative';
+            urlInput.parentElement.appendChild(indicator);
+            
+            setTimeout(() => {
+              urlInput.classList.remove('bg-lime-100', 'border-lime-400');
+              urlInput.style.boxShadow = '';
+              if (indicator.parentElement) {
+                indicator.parentElement.removeChild(indicator);
+              }
+            }, 3000);
           } else if (selectedUseCase !== 'custom') {
+            // Clear and show placeholder
+            urlInput.value = '';
             urlInput.placeholder = `Example: ${selectedUseCase === 'investors' ? 'angel investors' : selectedUseCase === 'partners' ? 'potential partners' : 'decision makers'}`;
           } else {
+            // Custom search - clear everything
+            urlInput.value = '';
             urlInput.placeholder = 'Enter your custom search terms...';
           }
         }
@@ -1299,6 +1504,24 @@
     </script>
 
     <script>
+      // Documentation guide toggle functionality
+      function toggleGuide(guideType) {
+        const guides = ['quickstart', 'api', 'community', 'videos'];
+        const guideElements = guides.map(type => document.getElementById(`${type}-guide`));
+        
+        // Hide all guides first
+        guideElements.forEach(element => {
+          if (element) element.classList.add('hidden');
+        });
+        
+        // Show the selected guide
+        const selectedGuide = document.getElementById(`${guideType}-guide`);
+        if (selectedGuide) {
+          selectedGuide.classList.remove('hidden');
+          selectedGuide.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+
       // Smooth scrolling for navigation links
       document.addEventListener('DOMContentLoaded', () => {
         const navLinks = document.querySelectorAll('a[href^="#"]');
