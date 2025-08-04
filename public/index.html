@@ -95,7 +95,7 @@
         </div>
         
         <div class="flex items-center space-x-4">
-          <button class="bg-lime-500 hover:bg-lime-400 text-gray-900 px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200">Start Free</button>
+          <button onclick="scrollToScraper()" class="bg-lime-500 hover:bg-lime-400 text-gray-900 px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200">Start Free</button>
           <div class="text-xs text-gray-500 hidden md:block font-medium">
             v2.0
           </div>
@@ -202,7 +202,7 @@
         </div>
         
         <!-- Search Depth Configuration -->
-        <div class="flex gap-4 mb-4 justify-center items-center">
+        <div class="flex gap-4 mb-4 justify-center items-center px-4 sm:px-0">
           <label class="flex items-center gap-2 text-sm">
             <span>Search Depth:</span>
             <div class="relative group">
@@ -802,7 +802,7 @@
         <div class="bg-gray-800 rounded-lg p-8 border border-gray-700">
           <h3 class="text-2xl font-semibold text-white mb-4">Join Thousands of Successful Businesses</h3>
           <p class="text-gray-400 mb-6">From startups to Fortune 500 companies, businesses trust Winston AI to find their next customers, partners, and investors.</p>
-          <button class="bg-lime-500 hover:bg-lime-400 text-gray-900 px-8 py-3 rounded-lg font-semibold transition-colors duration-200">Start Your Free Trial</button>
+          <button onclick="scrollToScraper()" class="bg-lime-500 hover:bg-lime-400 text-gray-900 px-8 py-3 rounded-lg font-semibold transition-colors duration-200">Start Your Free Trial</button>
         </div>
       </div>
     </section>
@@ -832,7 +832,7 @@
               <li><a href="#docs" class="hover:text-lime-400">Documentation</a></li>
               <li><a href="#docs" class="hover:text-lime-400">Help Center</a></li>
               <li><a href="#docs" class="hover:text-lime-400">Community</a></li>
-              <li><a href="mailto:support@winstonai.io" class="hover:text-lime-400">Contact</a></li>
+              <li><a href="mailto:scraper.winstonai.snowdrop007@passinbox.com" class="hover:text-lime-400">Contact</a></li>
             </ul>
           </div>
           
@@ -840,7 +840,7 @@
             <h4 class="text-white font-semibold mb-4">Company</h4>
             <ul class="text-gray-400 text-sm space-y-2">
               <li><a href="#about" class="hover:text-lime-400">About</a></li>
-              <li><a href="https://blog.winstonai.io" class="hover:text-lime-400">Blog</a></li>
+              <li><a href="#" class="hover:text-lime-400">Blog</a></li>
               <li><a href="mailto:careers@winstonai.io" class="hover:text-lime-400">Careers</a></li>
               <li><a href="/privacy" class="hover:text-lime-400">Privacy</a></li>
             </ul>
@@ -1504,6 +1504,14 @@
     </script>
 
     <script>
+      // Scroll to scraper function
+      function scrollToScraper() {
+        const scraperSection = document.querySelector('header');
+        if (scraperSection) {
+          scraperSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      }
+
       // Documentation guide toggle functionality
       function toggleGuide(guideType) {
         const guides = ['quickstart', 'api', 'community', 'videos'];
