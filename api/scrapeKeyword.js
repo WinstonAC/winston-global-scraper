@@ -61,6 +61,9 @@ function validatePhoneNumber(phone) {
     /^8[0]{9}$/,             // 8000000000 pattern
     /^9[0-9]{9}$/,           // 9-digit numbers starting with 9
     /^[0-9]{7}$/,            // 7-digit numbers (often dates)
+    /^7[0-9]{9}$/,           // 10-digit numbers starting with 7 (like 7862913290)
+    /^6[0-9]{9}$/,           // 10-digit numbers starting with 6 (like 6666666667)
+    /^[0-9]{10}$/,           // Any 10-digit number (too generic, likely timestamp)
   ];
   
   for (const pattern of timestampPatterns) {
@@ -77,6 +80,11 @@ function validatePhoneNumber(phone) {
   if (/^(19|20)\d{6}$/.test(digits)) return false; // YYYYMMDD format
   if (/^\d{8}$/.test(digits) && parseInt(digits) > 19000000) return false; // Likely date
   
+  // Reject numbers that are too round or suspicious
+  if (/^[0-9]{2}0{8}$/.test(digits)) return false; // XX00000000
+  if (/^[0-9]{3}0{7}$/.test(digits)) return false; // XXX0000000
+  if (/^[0-9]{4}0{6}$/.test(digits)) return false; // XXXX000000
+  
   // Validate country codes for international numbers
   if (digits.length > 10) {
     const countryCode = digits.slice(0, -10);
@@ -86,14 +94,18 @@ function validatePhoneNumber(phone) {
   
   // Additional validation for US numbers
   if (digits.length === 10) {
-    // Reject numbers that look like dates or common patterns
-    if (digits.startsWith('800') || digits.startsWith('888') || digits.startsWith('877')) {
+    // Only allow toll-free numbers and specific area codes
+    if (digits.startsWith('800') || digits.startsWith('888') || digits.startsWith('877') || digits.startsWith('866')) {
       // Allow toll-free numbers
       return true;
     }
-    // Reject numbers that are too round or suspicious
-    if (/^[0-9]{2}0{8}$/.test(digits)) return false; // XX00000000
-    if (/^[0-9]{3}0{7}$/.test(digits)) return false; // XXX0000000
+    
+    // Reject numbers that look like timestamps or suspicious patterns
+    if (parseInt(digits) > 9999999999) return false; // Too large
+    if (parseInt(digits) < 1000000000) return false; // Too small
+    
+    // Reject common timestamp patterns
+    if (/^[7-9][0-9]{9}$/.test(digits)) return false; // Numbers starting with 7, 8, 9 (often timestamps)
   }
   
   return true;
@@ -316,82 +328,78 @@ async function bingFallback(keyword) {
 }
 
 export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  const { keyword, searchDepth = 'balanced', qualityFilter = 'good', page = 1, limit = 50 } = req.body;
+
+  if (!keyword) {
+    return res.status(400).json({ error: 'Keyword is required' });
+  }
+
   let browser;
-  let keyword;
   try {
-    const body = req.body;
-    keyword = body.keyword;
-    const searchDepth = body.searchDepth || 'balanced';
-    const pageNum = body.page || 1; // Renamed to avoid conflict with Puppeteer page
-    const limit = body.limit || 50; // Configurable result limit
-    console.log('[Keyword Scraper] Payload:', { keyword, searchDepth, pageNum, limit }, 'Timestamp:', new Date().toISOString(), 'Vercel Env:', process.env.VERCEL_ENV);
+    // 🚀 TIMEOUT MANAGEMENT - Prevent 504 errors
+    const timeoutMs = 30000; // 30 seconds timeout
     
-    if (!keyword || typeof keyword !== 'string') {
-      return res.status(400).json({ error: 'Keyword is required.' });
+    // Adjust search depth to prevent timeouts
+    let pagesToProcess;
+    switch (searchDepth) {
+      case 'fast':
+        pagesToProcess = 4; // Reduced from 8
+        break;
+      case 'thorough':
+        pagesToProcess = 8; // Reduced from 16
+        break;
+      case 'balanced':
+      default:
+        pagesToProcess = 6; // Reduced from 12
+        break;
     }
+
+    console.log(`[Winston AI] Starting search for "${keyword}" with ${pagesToProcess} pages`);
+
+    browser = await puppeteer.launch({
+      headless: true,
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu',
+        '--timeout=25000' // 25 second timeout for page operations
+      ]
+    });
+
+    const page = await browser.newPage();
     
-    // Configure search depth with enhanced limits
-    const depthConfig = {
-      fast: { searchResults: 25, processLinks: 8, maxResults: 100 },
-      balanced: { searchResults: 35, processLinks: 12, maxResults: 200 },
-      thorough: { searchResults: 45, processLinks: 16, maxResults: 300 }
-    };
+    // Set page timeout
+    page.setDefaultTimeout(25000);
+    page.setDefaultNavigationTimeout(25000);
+
+    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36');
+    await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
     
-    const config = depthConfig[searchDepth] || depthConfig.balanced;
+    // Add pagination to search URL for DuckDuckGo
+    const offset = (page - 1) * 10; // DuckDuckGo uses 10 results per page
+    const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(keyword)}&s=${offset}`;
+    await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
+    console.log('[Keyword Scraper] Navigated to DuckDuckGo search page', page);
     
-    try {
-      console.log('[Keyword Scraper] Launching browser...');
-      
-      // Use @sparticuz/chromium for Vercel deployment with optimized settings
-      browser = await puppeteer.launch({
-        args: [...chromium.args, '--disable-dev-shm-usage', '--disable-gpu', '--single-process'],
-        defaultViewport: chromium.defaultViewport,
-        executablePath: await chromium.executablePath(),
-        headless: chromium.headless,
-        ignoreHTTPSErrors: true,
-      });
-      
-      console.log('[Keyword Scraper] Browser launched successfully');
-    } catch (err) {
-      console.error('[Keyword Scraper] Browser launch failed:', err.message);
-      return res.status(500).json({ error: 'Failed to launch browser' });
-    }
-    
-    let page;
-    try {
-      page = await browser.newPage();
-      await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36');
-      await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
-      
-      // Add pagination to search URL for DuckDuckGo
-      const offset = (pageNum - 1) * 10; // DuckDuckGo uses 10 results per page
-      const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(keyword)}&s=${offset}`;
-      await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
-      console.log('[Keyword Scraper] Navigated to DuckDuckGo search page', pageNum);
-      
-      await page.waitForSelector('a[data-testid="result-title-a"]', { timeout: 10000 });
-    } catch (err) {
-      console.error('[Keyword Scraper] Page navigation failed:', err.message);
-      if (browser) { try { await browser.close(); } catch (e) {} }
-      return res.status(500).json({ error: 'Failed to load search page' });
-    }
-    
-    let links;
-    try {
-      links = await page.evaluate(() => {
-        const anchors = Array.from(document.querySelectorAll('a[data-testid="result-title-a"]'));
-        return anchors.slice(0, 35).map(a => ({ title: a.innerText, url: a.href })); // Will be overridden by config
-      });
-      console.log('[Keyword Scraper] Found', links.length, 'results');
-    } catch (err) {
-      console.error('[Keyword Scraper] Search results extraction failed:', err.message);
-      if (browser) { try { await browser.close(); } catch (e) {} }
-      return res.status(500).json({ error: 'Failed to extract search results' });
-    }
+    await page.waitForSelector('a[data-testid="result-title-a"]', { timeout: 10000 });
+
+    let links = await page.evaluate(() => {
+      const anchors = Array.from(document.querySelectorAll('a[data-testid="result-title-a"]'));
+      return anchors.slice(0, 35).map(a => ({ title: a.innerText, url: a.href }));
+    });
+    console.log('[Keyword Scraper] Found', links.length, 'results');
     
     let rows = [];
     // Process links based on search depth configuration
-    const linksToProcess = links.slice(0, config.processLinks);
+    const linksToProcess = links.slice(0, pagesToProcess);
     console.log(`[Keyword Scraper] Processing ${linksToProcess.length} links with ${searchDepth} depth`);
     
     // Enhanced contact extraction with better deduplication
@@ -412,18 +420,17 @@ export default async function handler(req, res) {
         const rawEmails = html.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g) || [];
         const emails = [...new Set(rawEmails)]
           .filter(e => /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i.test(e))
-          .filter(e => !seenEmails.has(e.toLowerCase())) // Deduplicate emails
+          .filter(e => !seenEmails.has(e.toLowerCase()))
           .slice(0, 20);
         
-        // Add to seen set
         emails.forEach(e => seenEmails.add(e.toLowerCase()));
         
-        // 🚀 ENHANCED PHONE NUMBER EXTRACTION WITH VALIDATION
+        // Enhanced phone validation
         const phonePatterns = [
-          /\+\d{1,4}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g,  // International format
-          /\(\d{3}\)[-.\s]?\d{3}[-.\s]?\d{4}/g,                          // US format (123) 456-7890
-          /\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/g,                              // US format 123-456-7890
-          /\+\d{10,15}/g                                                   // Simple international
+          /\+\d{1,4}[-.\s]?\(?\d{1,4}\)?[-.\s]?\d{1,4}[-.\s]?\d{1,9}/g,
+          /\(\d{3}\)[-.\s]?\d{3}[-.\s]?\d{4}/g,
+          /\d{3}[-.\s]?\d{3}[-.\s]?\d{4}/g,
+          /\+\d{10,15}/g
         ];
         
         let rawPhones = [];
@@ -432,17 +439,14 @@ export default async function handler(req, res) {
           rawPhones = rawPhones.concat(matches);
         });
         
-        // Clean and validate phone numbers with deduplication
         const phones = [...new Set(rawPhones)]
-          .map(p => p.replace(/[^\d+]/g, ''))  // Keep only digits and +
-          .filter(validatePhoneNumber)  // Use enhanced validation
-          .filter(p => !seenPhones.has(p)) // Deduplicate phones
+          .map(p => p.replace(/[^\d+]/g, ''))
+          .filter(validatePhoneNumber)
+          .filter(p => !seenPhones.has(p))
           .slice(0, 5);
         
-        // Add to seen set
         phones.forEach(p => seenPhones.add(p));
         
-        // 🚀 SOCIAL MEDIA EXTRACTION
         const linkedinMatches = html.match(/https?:\/\/(?:www\.)?linkedin\.com\/(?:in|company)\/[a-zA-Z0-9-]+/g) || [];
         const twitterMatches = html.match(/https?:\/\/(?:www\.)?(?:twitter\.com|x\.com)\/[a-zA-Z0-9_]+/g) || [];
         const socialMedia = [...new Set([...linkedinMatches, ...twitterMatches])].slice(0, 5);
@@ -450,7 +454,6 @@ export default async function handler(req, res) {
         const tags = tagRules.filter(t => t.re.test(link.title + ' ' + html)).map(t => t.tag);
         const contactInfo = emails.length ? findContactName($, emails[0], link.url) : findContactName($, '', link.url);
         
-        // 🚀 JOB TITLE EXTRACTION
         const jobTitlePatterns = [
           /\b(CEO|Chief Executive Officer|Founder|Co-Founder|President|Managing Partner|General Partner|Investment Partner|Partner|Director|VP|Vice President|Manager|Head of|Lead|Owner|Executive|Principal)\b/gi
         ];
@@ -460,11 +463,6 @@ export default async function handler(req, res) {
           detectedJobTitles = detectedJobTitles.concat(matches);
         }
         const uniqueJobTitles = [...new Set(detectedJobTitles)].slice(0, 3).join(', ');
-        
-        console.log(`[Keyword Scraper] Extracted emails: ${emails.join(', ')}`);
-        console.log(`[Keyword Scraper] Contact name: ${contactInfo.name}`);
-        console.log(`[Keyword Scraper] Job titles: ${uniqueJobTitles}`);
-        console.log(`[Keyword Scraper] Tags: ${tags.join(', ')}`);
         
         const row = { 
           title: link.title, 
@@ -477,9 +475,8 @@ export default async function handler(req, res) {
           socialMedia: socialMedia.join(';')
         };
         
-        // Only add rows with minimum quality threshold
         const qualityScore = calculateQualityScore(row);
-        if (qualityScore >= 30) { // Minimum quality threshold
+        if (qualityScore >= 30) {
           row.qualityScore = qualityScore;
           rows.push(row);
         }
@@ -487,24 +484,16 @@ export default async function handler(req, res) {
         await subPage.close();
       } catch (err) {
         console.error('[Keyword Scraper] Subpage scrape failed:', err.message);
-        // Continue processing other links even if one fails
       }
     }
     
     await browser.close();
     
-    // Sort by quality score (highest first)
     rows.sort((a, b) => (b.qualityScore || 0) - (a.qualityScore || 0));
     
-    // Apply pagination and limits
-    const startIndex = (pageNum - 1) * limit;
+    const startIndex = (page - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedRows = rows.slice(startIndex, endIndex);
-    
-    if (rows.length < 3) {
-      const bingRows = await bingFallback(keyword);
-      rows = rows.concat(bingRows);
-    }
     
     let id = Date.now();
     const outputDir = '/tmp';
@@ -512,83 +501,76 @@ export default async function handler(req, res) {
     const csvFilename = `results_${id}.csv`;
     const filename = path.join(outputDir, csvFilename);
     
-    // Create spreadsheet-friendly CSV with better formatting
     const csvHeader = 'Contact Name,Job Title,Company/Title,Website,Primary Email,All Emails,Phone Numbers,Social Media,Tags,Quality Score,Full URL\n';
     const csvRows = paginatedRows.map(r => {
-      // Extract primary email (first one)
       const emailList = (r.emails || '').split(';').filter(e => e.trim());
       const primaryEmail = emailList[0] || '';
       const allEmails = emailList.join(', ');
       
-      // 📱 ENHANCED PHONE FORMATTING
       const phoneList = (r.phones || '').split(';').filter(p => p.trim());
       const formattedPhones = phoneList.map(p => {
         const digits = p.replace(/\D/g, '');
-        
-        // US/Canada numbers
         if (digits.length === 10) {
           return `+1 (${digits.slice(0,3)}) ${digits.slice(3,6)}-${digits.slice(6)}`;
         }
-        // US/Canada with country code
         if (digits.length === 11 && digits.startsWith('1')) {
           return `+1 (${digits.slice(1,4)}) ${digits.slice(4,7)}-${digits.slice(7)}`;
         }
-        // International numbers
         if (digits.length > 11) {
           return `+${digits}`;
         }
-        // Other formats
         if (digits.length >= 10) {
           return `+${digits.slice(0,2)} (${digits.slice(2,5)}) ${digits.slice(5,8)}-${digits.slice(8)}`;
         }
         return p;
       }).join(', ');
       
-      // Extract company name from URL
       let company = '';
       try {
         company = new URL(r.url).hostname.replace(/^www\./, '');
       } catch {}
       
-      // Clean tags and social media
       const cleanTags = (r.tags || '').split(';').filter(t => t.trim()).join(', ');
       const cleanSocialMedia = (r.socialMedia || '').split(';').filter(s => s.trim()).join(', ');
       
       return [
-        `"${(r.contact || '').replace(/"/g, '""')}"`,           // Contact Name
-        `"${(r.jobTitle || '').replace(/"/g, '""')}"`,          // Job Title
-        `"${(r.title || company || '').replace(/"/g, '""')}"`,  // Company/Title
-        `"${company}"`,                                          // Website
-        `"${primaryEmail}"`,                                     // Primary Email
-        `"${allEmails}"`,                                        // All Emails
-        `"${formattedPhones}"`,                                  // Phone Numbers
-        `"${cleanSocialMedia}"`,                                 // Social Media Profiles
-        `"${cleanTags}"`,                                        // Tags
-        `"${r.qualityScore || 0}"`,                             // Quality Score
-        `"${r.url || ''}"`                                       // Full URL
+        `"${(r.contact || '').replace(/"/g, '""')}"`,
+        `"${(r.jobTitle || '').replace(/"/g, '""')}"`,
+        `"${(r.title || company || '').replace(/"/g, '""')}"`,
+        `"${company}"`,
+        `"${primaryEmail}"`,
+        `"${allEmails}"`,
+        `"${formattedPhones}"`,
+        `"${cleanSocialMedia}"`,
+        `"${cleanTags}"`,
+        `"${r.qualityScore || 0}"`,
+        `"${r.url || ''}"`
       ].join(',');
     }).join('\n');
     const csv = csvHeader + csvRows;
     fs.writeFileSync(filename, csv);
     
-    console.log(`[Keyword Scraper] Results written to: ${csvFilename} - Processed ${paginatedRows.length} results (page ${pageNum} of ${Math.ceil(rows.length / limit)})`);
+    console.log(`[Keyword Scraper] Results written to: ${csvFilename} - Processed ${paginatedRows.length} results`);
     
-    // Enhanced response with pagination info
     res.status(200).json({ 
       rows: paginatedRows, 
       csvId: csvFilename,
       csvData: csv,
       pagination: {
-        currentPage: pageNum,
+        currentPage: page,
         totalPages: Math.ceil(rows.length / limit),
         totalResults: rows.length,
         resultsPerPage: limit,
-        hasMore: pageNum < Math.ceil(rows.length / limit)
+        hasMore: page < Math.ceil(rows.length / limit)
       }
     });
   } catch (error) {
-    console.error('[Keyword Scraper] Unhandled error:', error.message || error);
-    if (browser) { try { await browser.close(); } catch (e) {} }
-    res.status(500).json({ error: 'Scrape failed' });
+    console.error('[Keyword Scraper] Error:', error.message);
+    if (browser) { 
+      try { 
+        await browser.close(); 
+      } catch (e) {} 
+    }
+    res.status(500).json({ error: 'Scrape failed - server timeout or error' });
   }
 } 
