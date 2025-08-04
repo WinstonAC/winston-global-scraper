@@ -211,9 +211,9 @@ export default async function handler(req, res) {
     const body = req.body;
     keyword = body.keyword;
     const searchDepth = body.searchDepth || 'balanced';
-    const page = body.page || 1; // Add pagination support
+    const pageNum = body.page || 1; // Renamed to avoid conflict with Puppeteer page
     const limit = body.limit || 50; // Configurable result limit
-    console.log('[Keyword Scraper] Payload:', { keyword, searchDepth, page, limit }, 'Timestamp:', new Date().toISOString(), 'Vercel Env:', process.env.VERCEL_ENV);
+    console.log('[Keyword Scraper] Payload:', { keyword, searchDepth, pageNum, limit }, 'Timestamp:', new Date().toISOString(), 'Vercel Env:', process.env.VERCEL_ENV);
     
     if (!keyword || typeof keyword !== 'string') {
       return res.status(400).json({ error: 'Keyword is required.' });
@@ -253,10 +253,10 @@ export default async function handler(req, res) {
       await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
       
       // Add pagination to search URL for DuckDuckGo
-      const offset = (page - 1) * 10; // DuckDuckGo uses 10 results per page
+      const offset = (pageNum - 1) * 10; // DuckDuckGo uses 10 results per page
       const searchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(keyword)}&s=${offset}`;
       await page.goto(searchUrl, { waitUntil: 'domcontentloaded', timeout: 15000 });
-      console.log('[Keyword Scraper] Navigated to DuckDuckGo search page', page);
+      console.log('[Keyword Scraper] Navigated to DuckDuckGo search page', pageNum);
       
       await page.waitForSelector('a[data-testid="result-title-a"]', { timeout: 10000 });
     } catch (err) {
@@ -386,7 +386,7 @@ export default async function handler(req, res) {
     rows.sort((a, b) => (b.qualityScore || 0) - (a.qualityScore || 0));
     
     // Apply pagination and limits
-    const startIndex = (page - 1) * limit;
+    const startIndex = (pageNum - 1) * limit;
     const endIndex = startIndex + limit;
     const paginatedRows = rows.slice(startIndex, endIndex);
     
@@ -460,7 +460,7 @@ export default async function handler(req, res) {
     const csv = csvHeader + csvRows;
     fs.writeFileSync(filename, csv);
     
-    console.log(`[Keyword Scraper] Results written to: ${csvFilename} - Processed ${paginatedRows.length} results (page ${page} of ${Math.ceil(rows.length / limit)})`);
+    console.log(`[Keyword Scraper] Results written to: ${csvFilename} - Processed ${paginatedRows.length} results (page ${pageNum} of ${Math.ceil(rows.length / limit)})`);
     
     // Enhanced response with pagination info
     res.status(200).json({ 
@@ -468,11 +468,11 @@ export default async function handler(req, res) {
       csvId: csvFilename,
       csvData: csv,
       pagination: {
-        currentPage: page,
+        currentPage: pageNum,
         totalPages: Math.ceil(rows.length / limit),
         totalResults: rows.length,
         resultsPerPage: limit,
-        hasMore: page < Math.ceil(rows.length / limit)
+        hasMore: pageNum < Math.ceil(rows.length / limit)
       }
     });
   } catch (error) {
