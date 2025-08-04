@@ -132,6 +132,7 @@
           </div>
         </div>
 
+        <!-- Search Mode Selection -->
         <div class="flex gap-4 mb-4 justify-center">
           <label class="flex items-center gap-1">
             <input type="radio" name="mode" value="keyword" checked />
@@ -149,6 +150,44 @@
             <input type="checkbox" id="emailToggle" checked />
             Include e-mails
           </label>
+        </div>
+
+        <!-- Use Case Selection -->
+        <div class="mb-6">
+          <label class="block text-sm font-medium text-gray-300 mb-3">Choose Your Use Case:</label>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+            <button type="button" class="use-case-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg p-3 text-left transition-colors" data-use-case="investors">
+              <div class="text-lime-400 font-semibold text-sm">💰 Investor Discovery</div>
+              <div class="text-gray-400 text-xs mt-1">Find angel investors, VCs, and advisors</div>
+            </button>
+            <button type="button" class="use-case-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg p-3 text-left transition-colors" data-use-case="partners">
+              <div class="text-lime-400 font-semibold text-sm">🤝 Partner Matching</div>
+              <div class="text-gray-400 text-xs mt-1">Find strategic partners and collaborators</div>
+            </button>
+            <button type="button" class="use-case-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg p-3 text-left transition-colors" data-use-case="customers">
+              <div class="text-lime-400 font-semibold text-sm">🎯 Customer Acquisition</div>
+              <div class="text-gray-400 text-xs mt-1">Find decision makers at target companies</div>
+            </button>
+            <button type="button" class="use-case-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded-lg p-3 text-left transition-colors" data-use-case="custom">
+              <div class="text-lime-400 font-semibold text-sm">🔍 Custom Search</div>
+              <div class="text-gray-400 text-xs mt-1">Enter your own search terms</div>
+            </button>
+          </div>
+        </div>
+
+        <!-- Industry Selection (Hidden by default) -->
+        <div id="industrySelection" class="mb-6 hidden">
+          <label class="block text-sm font-medium text-gray-300 mb-3">Select Industry:</label>
+          <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+            <button type="button" class="industry-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm transition-colors" data-industry="saas">SaaS/Tech</button>
+            <button type="button" class="industry-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm transition-colors" data-industry="healthcare">Healthcare</button>
+            <button type="button" class="industry-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm transition-colors" data-industry="finance">Finance</button>
+            <button type="button" class="industry-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm transition-colors" data-industry="ecommerce">E-commerce</button>
+            <button type="button" class="industry-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm transition-colors" data-industry="education">Education</button>
+            <button type="button" class="industry-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm transition-colors" data-industry="realestate">Real Estate</button>
+            <button type="button" class="industry-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm transition-colors" data-industry="consulting">Consulting</button>
+            <button type="button" class="industry-btn bg-gray-800 hover:bg-gray-700 border border-gray-600 rounded px-3 py-2 text-sm transition-colors" data-industry="manufacturing">Manufacturing</button>
+          </div>
         </div>
         
         <!-- Search Depth Configuration -->
@@ -203,7 +242,7 @@
             id="urlInput"
             type="text"
             required
-            placeholder="Example: Tech founders who help early-stage startups"
+            placeholder="Example: angel investors in fintech, or decision makers at SaaS companies"
             class="w-full sm:w-96 px-4 py-2 rounded-lg bg-white text-gray-900 border border-blue-400 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           <textarea
@@ -845,6 +884,107 @@
         loadMoreInfo.textContent = `Searching deeper for more contacts...`;
         totalResultsInfo.textContent = `Total results: ${totalResults}`;
       }
+    </script>
+
+    <script>
+      // Use Case Selection Functionality
+      document.addEventListener('DOMContentLoaded', () => {
+        const useCaseButtons = document.querySelectorAll('.use-case-btn');
+        const industryButtons = document.querySelectorAll('.industry-btn');
+        const industrySelection = document.getElementById('industrySelection');
+        const urlInput = document.getElementById('urlInput');
+        
+        let selectedUseCase = 'custom';
+        let selectedIndustry = '';
+
+        // Use case button click handlers
+        useCaseButtons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            // Remove active state from all buttons
+            useCaseButtons.forEach(b => {
+              b.classList.remove('border-lime-400', 'bg-gray-700');
+              b.classList.add('border-gray-600', 'bg-gray-800');
+            });
+            
+            // Add active state to clicked button
+            btn.classList.remove('border-gray-600', 'bg-gray-800');
+            btn.classList.add('border-lime-400', 'bg-gray-700');
+            
+            selectedUseCase = btn.dataset.useCase;
+            
+            // Show/hide industry selection
+            if (selectedUseCase !== 'custom') {
+              industrySelection.classList.remove('hidden');
+              updatePlaceholder();
+            } else {
+              industrySelection.classList.add('hidden');
+              urlInput.placeholder = 'Enter your custom search terms...';
+            }
+          });
+        });
+
+        // Industry button click handlers
+        industryButtons.forEach(btn => {
+          btn.addEventListener('click', () => {
+            // Remove active state from all industry buttons
+            industryButtons.forEach(b => {
+              b.classList.remove('border-lime-400', 'bg-gray-700');
+              b.classList.add('border-gray-600', 'bg-gray-800');
+            });
+            
+            // Add active state to clicked button
+            btn.classList.remove('border-gray-600', 'bg-gray-800');
+            btn.classList.add('border-lime-400', 'bg-gray-700');
+            
+            selectedIndustry = btn.dataset.industry;
+            updatePlaceholder();
+          });
+        });
+
+        // Update placeholder based on use case and industry
+        function updatePlaceholder() {
+          const useCaseExamples = {
+            investors: {
+              saas: 'angel investors in SaaS and fintech',
+              healthcare: 'healthcare investors and VCs',
+              finance: 'fintech investors and angel investors',
+              ecommerce: 'e-commerce investors and retail VCs',
+              education: 'edtech investors and education VCs',
+              realestate: 'proptech investors and real estate VCs',
+              consulting: 'consulting industry investors',
+              manufacturing: 'manufacturing and industrial investors'
+            },
+            partners: {
+              saas: 'SaaS companies for partnerships',
+              healthcare: 'healthcare technology partners',
+              finance: 'fintech partnership opportunities',
+              ecommerce: 'e-commerce platform partners',
+              education: 'edtech partnership opportunities',
+              realestate: 'proptech partnership companies',
+              consulting: 'consulting firm partnerships',
+              manufacturing: 'manufacturing technology partners'
+            },
+            customers: {
+              saas: 'decision makers at SaaS companies',
+              healthcare: 'healthcare decision makers and executives',
+              finance: 'fintech company executives',
+              ecommerce: 'e-commerce company decision makers',
+              education: 'education technology decision makers',
+              realestate: 'real estate technology executives',
+              consulting: 'consulting firm decision makers',
+              manufacturing: 'manufacturing company executives'
+            }
+          };
+
+          if (selectedUseCase !== 'custom' && selectedIndustry && useCaseExamples[selectedUseCase]?.[selectedIndustry]) {
+            urlInput.placeholder = `Example: ${useCaseExamples[selectedUseCase][selectedIndustry]}`;
+          } else if (selectedUseCase !== 'custom') {
+            urlInput.placeholder = `Example: ${selectedUseCase === 'investors' ? 'angel investors' : selectedUseCase === 'partners' ? 'potential partners' : 'decision makers'}`;
+          } else {
+            urlInput.placeholder = 'Enter your custom search terms...';
+          }
+        }
+      });
     </script>
   </body>
 </html> 
