@@ -347,14 +347,14 @@ export default async function handler(req, res) {
     let pagesToProcess;
     switch (searchDepth) {
       case 'fast':
-        pagesToProcess = 4; // Reduced from 8
+        pagesToProcess = 2; // Further reduced to prevent timeouts
         break;
       case 'thorough':
-        pagesToProcess = 8; // Reduced from 16
+        pagesToProcess = 4; // Further reduced to prevent timeouts
         break;
       case 'balanced':
       default:
-        pagesToProcess = 6; // Reduced from 12
+        pagesToProcess = 3; // Further reduced to prevent timeouts
         break;
     }
 

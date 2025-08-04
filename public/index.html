@@ -802,7 +802,7 @@
         <div class="bg-gray-800 rounded-lg p-8 border border-gray-700">
           <h3 class="text-2xl font-semibold text-white mb-4">Join Thousands of Successful Businesses</h3>
           <p class="text-gray-400 mb-6">From startups to Fortune 500 companies, businesses trust Winston AI to find their next customers, partners, and investors.</p>
-          <button onclick="scrollToScraper()" class="bg-lime-500 hover:bg-lime-400 text-gray-900 px-8 py-3 rounded-lg font-semibold transition-colors duration-200">Start Your Free Trial</button>
+          <button onclick="openTrialEmail()" class="bg-lime-500 hover:bg-lime-400 text-gray-900 px-8 py-3 rounded-lg font-semibold transition-colors duration-200">Start Your Free Trial</button>
         </div>
       </div>
     </section>
@@ -1510,6 +1510,25 @@
         if (scraperSection) {
           scraperSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
+      }
+
+      // Open trial email function
+      function openTrialEmail() {
+        const subject = encodeURIComponent('Winston AI Free Trial Request');
+        const body = encodeURIComponent(`Hi Winston AI Team,
+
+I'm interested in trying Winston AI for lead generation.
+
+Company: [Your Company]
+Use Case: [Investor Discovery / Partner Matching / Customer Acquisition]
+Industry: [Your Industry]
+
+Please contact me to set up my free trial.
+
+Best regards,
+[Your Name]`);
+        
+        window.location.href = `mailto:scraper.winstonai.snowdrop007@passinbox.com?subject=${subject}&body=${body}`;
       }
 
       // Documentation guide toggle functionality
