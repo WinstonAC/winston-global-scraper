@@ -341,7 +341,7 @@ export default async function handler(req, res) {
   let browser;
   try {
     // 🚀 TIMEOUT MANAGEMENT - Prevent 504 errors
-    const timeoutMs = 30000; // 30 seconds timeout
+    const timeoutMs = 60000; // 60 seconds timeout for Vercel
     
     // Adjust search depth to prevent timeouts
     let pagesToProcess;
@@ -370,15 +370,15 @@ export default async function handler(req, res) {
         '--no-first-run',
         '--no-zygote',
         '--disable-gpu',
-        '--timeout=25000' // 25 second timeout for page operations
+        '--timeout=45000' // 45 second timeout for page operations
       ]
     });
 
     const page = await browser.newPage();
     
     // Set page timeout
-    page.setDefaultTimeout(25000);
-    page.setDefaultNavigationTimeout(25000);
+    page.setDefaultTimeout(45000);
+    page.setDefaultNavigationTimeout(45000);
 
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36');
     await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });

@@ -5,8 +5,8 @@
       "maxDuration": 45
     },
     "api/scrapeKeyword.js": {
-      "memory": 1024,
-      "maxDuration": 60
+      "memory": 2048,
+      "maxDuration": 90
     },
     "api/batchScrape.js": {
       "memory": 1536,
