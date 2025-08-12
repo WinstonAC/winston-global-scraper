@@ -343,18 +343,18 @@ export default async function handler(req, res) {
     // 🚀 TIMEOUT MANAGEMENT - Prevent 504 errors
     const timeoutMs = 60000; // 60 seconds timeout for Vercel
     
-    // Adjust search depth to prevent timeouts
+    // Optimized search depth configuration for better performance
     let pagesToProcess;
     switch (searchDepth) {
       case 'fast':
-        pagesToProcess = 2; // Further reduced to prevent timeouts
+        pagesToProcess = 3; // Optimized for speed while maintaining quality
         break;
       case 'thorough':
-        pagesToProcess = 4; // Further reduced to prevent timeouts
+        pagesToProcess = 6; // Increased for better results with new timeout limits
         break;
       case 'balanced':
       default:
-        pagesToProcess = 3; // Further reduced to prevent timeouts
+        pagesToProcess = 4; // Balanced approach for good results
         break;
     }
 
@@ -370,15 +370,17 @@ export default async function handler(req, res) {
         '--no-first-run',
         '--no-zygote',
         '--disable-gpu',
-        '--timeout=45000' // 45 second timeout for page operations
+        '--timeout=60000', // Increased timeout for better reliability
+        '--disable-web-security',
+        '--disable-features=VizDisplayCompositor'
       ]
     });
 
     const page = await browser.newPage();
     
-    // Set page timeout
-    page.setDefaultTimeout(45000);
-    page.setDefaultNavigationTimeout(45000);
+    // Set optimized page timeouts
+    page.setDefaultTimeout(60000);
+    page.setDefaultNavigationTimeout(60000);
 
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.6167.85 Safari/537.36');
     await page.setExtraHTTPHeaders({ 'Accept-Language': 'en-US,en;q=0.9' });
@@ -406,13 +408,14 @@ export default async function handler(req, res) {
     const seenEmails = new Set();
     const seenPhones = new Set();
     
-    for (const link of linksToProcess) {
+    // Process pages in parallel for better performance (max 3 concurrent)
+    const processPage = async (link) => {
       try {
         console.log(`[Keyword Scraper] Scraping subpage: ${link.url}`);
         const subPage = await browser.newPage();
         
-        // Set shorter timeout for individual pages
-        await subPage.goto(link.url, { waitUntil: 'domcontentloaded', timeout: 8000 });
+        // Optimized timeout for individual pages
+        await subPage.goto(link.url, { waitUntil: 'domcontentloaded', timeout: 15000 });
         
         const html = await subPage.content();
         const $ = load(html);
@@ -478,12 +481,27 @@ export default async function handler(req, res) {
         const qualityScore = calculateQualityScore(row);
         if (qualityScore >= 30) {
           row.qualityScore = qualityScore;
-          rows.push(row);
+          return row;
         }
         
         await subPage.close();
+        return null;
       } catch (err) {
         console.error('[Keyword Scraper] Subpage scrape failed:', err.message);
+        return null;
+      }
+    };
+    
+    // Process pages in parallel with concurrency limit
+    const concurrencyLimit = 3;
+    for (let i = 0; i < linksToProcess.length; i += concurrencyLimit) {
+      const batch = linksToProcess.slice(i, i + concurrencyLimit);
+      const batchResults = await Promise.allSettled(batch.map(processPage));
+      
+      for (const result of batchResults) {
+        if (result.status === 'fulfilled' && result.value) {
+          rows.push(result.value);
+        }
       }
     }
     

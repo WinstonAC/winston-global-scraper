@@ -39,26 +39,39 @@ class WinstonScraper {
     const page = options.page || 1;
     const limit = options.limit || 50;
     
+    // Add progress callback support
+    const onProgress = options.onProgress || (() => {});
+    
     try {
       let response, data;
       
+      // Update progress for different search modes
+      onProgress({ status: 'starting', message: `Initializing ${mode} search...`, progress: 10 });
+      
       switch (mode) {
         case 'batch':
+          onProgress({ status: 'searching', message: 'Processing batch keywords...', progress: 30 });
           response = await this.batchSearch(input, { searchDepth, qualityFilter, page, limit });
           break;
         case 'url':
+          onProgress({ status: 'searching', message: 'Analyzing target URL...', progress: 30 });
           response = await this.urlScrape(input, { searchDepth, qualityFilter, page, limit });
           break;
         case 'keyword':
         default:
+          onProgress({ status: 'searching', message: 'Searching web sources...', progress: 30 });
           response = await this.keywordSearch(input, { searchDepth, qualityFilter, page, limit });
           break;
       }
+      
+      onProgress({ status: 'processing', message: 'Extracting contact data...', progress: 70 });
       
       // Apply quality filtering
       if (response.rows) {
         response.rows = this.filterByQuality(response.rows, qualityFilter);
       }
+      
+      onProgress({ status: 'finalizing', message: 'Finalizing results...', progress: 90 });
       
       // Store results for export (accumulate across pages)
       if (page === 1) {
@@ -69,8 +82,11 @@ class WinstonScraper {
       this.serverCsvData = response.csvData || null;
       this.lastCsvId = response.csvId || null;
       
+      onProgress({ status: 'complete', message: 'Search completed!', progress: 100 });
+      
       return response;
     } catch (error) {
+      onProgress({ status: 'error', message: error.message || 'Scraping failed', progress: 0 });
       throw new Error(error.message || 'Scraping failed');
     }
   }
@@ -91,26 +107,61 @@ class WinstonScraper {
   }
 
   /**
-   * Keyword search implementation
+   * Keyword search implementation with retry logic and better timeout handling
    */
   async keywordSearch(keyword, options = {}) {
-    const response = await fetch('/api/scrapeKeyword', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        keyword,
-        searchDepth: options.searchDepth || this.config.searchDepth,
-        page: options.page || 1,
-        limit: options.limit || 50
-      })
-    });
+    const maxRetries = 2;
+    let lastError;
     
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Keyword search failed');
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Create AbortController for timeout handling
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout
+        
+        const response = await fetch('/api/scrapeKeyword', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ 
+            keyword,
+            searchDepth: options.searchDepth || this.config.searchDepth,
+            page: options.page || 1,
+            limit: options.limit || 50
+          }),
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || `Keyword search failed (HTTP ${response.status})`);
+        }
+        
+        return await response.json();
+        
+      } catch (error) {
+        lastError = error;
+        
+        if (error.name === 'AbortError') {
+          console.warn(`[Winston] Search attempt ${attempt} timed out, ${maxRetries - attempt} retries remaining`);
+          if (attempt < maxRetries) {
+            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+            continue;
+          }
+        }
+        
+        if (attempt < maxRetries) {
+          console.warn(`[Winston] Search attempt ${attempt} failed: ${error.message}, retrying...`);
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+          continue;
+        }
+        
+        break;
+      }
     }
     
-    return await response.json();
+    throw new Error(lastError?.message || 'Keyword search failed after all retry attempts');
   }
 
   /**
