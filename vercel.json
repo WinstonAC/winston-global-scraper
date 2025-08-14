@@ -1,27 +1,21 @@
 {
   "functions": {
     "api/scrape.js": {
-      "memory": 2048,
-      "maxDuration": 120
+      "maxDuration": 60
     },
     "api/scrapeKeyword.js": {
-      "memory": 3008,
-      "maxDuration": 300
+      "maxDuration": 120
     },
     "api/batchScrape.js": {
-      "memory": 3008,
-      "maxDuration": 300
+      "maxDuration": 120
     },
     "api/download/[csvId].js": {
-      "memory": 512,
       "maxDuration": 5
     },
     "api/download/[csvId]/xlsx.js": {
-      "memory": 512,
       "maxDuration": 10
     },
     "api/sheets/[csvId].js": {
-      "memory": 512,
       "maxDuration": 5
     }
   },

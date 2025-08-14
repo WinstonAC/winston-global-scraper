@@ -119,7 +119,7 @@ class WinstonScraper {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout
         
-        const response = await fetch('/api/scrapeKeyword', {
+        const response = await fetch('/api/scrape', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
