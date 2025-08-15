@@ -1,8 +1,20 @@
 import { readFileSync, existsSync } from 'fs';
 import { join, resolve, normalize } from 'path';
 import * as XLSX from 'xlsx';
+import { downloadRateLimit } from '../../../utils/rateLimit.js';
 
 export default async function handler(req, res) {
+  // 🔒 HTTP METHOD RESTRICTION - Only allow GET for downloads
+  if (req.method !== 'GET') {
+    return res.status(405).json({ 
+      error: 'Method not allowed', 
+      message: 'Only GET requests are allowed for this endpoint' 
+    });
+  }
+  
+  // 🔒 Apply rate limiting for downloads
+  downloadRateLimit(req, res);
+  
   const { csvId } = req.query;
   
   if (!csvId) {

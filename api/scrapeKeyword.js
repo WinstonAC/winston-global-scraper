@@ -3,11 +3,22 @@ import fs from 'fs';
 import path from 'path';
 import { load } from 'cheerio';
 import puppeteer from 'puppeteer-core';
+import { defaultRateLimit } from '../utils/rateLimit.js';
 
 export default async function handler(req, res) {
+  // 🔒 HTTP METHOD RESTRICTION - Only allow POST for scraping
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return res.status(405).json({ 
+      error: 'Method not allowed', 
+      message: 'Only POST requests are allowed for this endpoint' 
+    });
   }
+  
+  // 🔒 Apply rate limiting
+  defaultRateLimit(req, res);
+  
+  let browser;
+  let keyword;
 
   const { keyword, searchDepth = 'balanced', qualityFilter = 'good', page = 1, limit = 50, url } = req.body;
 

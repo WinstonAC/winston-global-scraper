@@ -107,67 +107,28 @@ class WinstonScraper {
   }
 
   /**
-   * Keyword search implementation with retry logic and better timeout handling
+   * Keyword search implementation
    */
-  async keywordSearch(keyword, options = {}) {
-    const maxRetries = 2;
-    let lastError;
+  async keywordSearch(keyword) {
+    const apiUrl = this.config.apiBaseUrl ? `${this.config.apiBaseUrl}/api/scrapeKeyword` : '/api/scrapeKeyword';
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keyword })
+    });
     
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      try {
-        // Create AbortController for timeout handling
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 300000); // 5 minute timeout
-        
-        const response = await fetch('/api/scrape', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            keyword,
-            searchDepth: options.searchDepth || this.config.searchDepth,
-            page: options.page || 1,
-            limit: options.limit || 50
-          }),
-          signal: controller.signal
-        });
-        
-        clearTimeout(timeoutId);
-        
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || `Keyword search failed (HTTP ${response.status})`);
-        }
-        
-        return await response.json();
-        
-      } catch (error) {
-        lastError = error;
-        
-        if (error.name === 'AbortError') {
-          console.warn(`[Winston] Search attempt ${attempt} timed out, ${maxRetries - attempt} retries remaining`);
-          if (attempt < maxRetries) {
-            await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
-            continue;
-          }
-        }
-        
-        if (attempt < maxRetries) {
-          console.warn(`[Winston] Search attempt ${attempt} failed: ${error.message}, retrying...`);
-          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
-          continue;
-        }
-        
-        break;
-      }
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Keyword search failed');
     }
     
-    throw new Error(lastError?.message || 'Keyword search failed after all retry attempts');
+    return await response.json();
   }
 
   /**
    * Batch search implementation
    */
-  async batchSearch(keywords, options = {}) {
+  async batchSearch(keywords) {
     if (typeof keywords === 'string') {
       keywords = keywords.split('\n').map(k => k.trim()).filter(k => k.length > 0);
     }
@@ -180,14 +141,11 @@ class WinstonScraper {
       throw new Error(`Maximum ${this.config.maxBatchKeywords} keywords allowed per batch`);
     }
     
-    const response = await fetch('/api/batchScrape', {
+    const apiUrl = this.config.apiBaseUrl ? `${this.config.apiBaseUrl}/api/batchScrape` : '/api/batchScrape';
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        keywords,
-        searchDepth: options.searchDepth || this.config.searchDepth,
-        qualityFilter: options.qualityFilter || this.config.qualityFilter
-      })
+      body: JSON.stringify({ keywords })
     });
     
     if (!response.ok) {
@@ -201,7 +159,7 @@ class WinstonScraper {
   /**
    * URL scraping implementation
    */
-  async urlScrape(url, options = {}) {
+  async urlScrape(url) {
     // Auto-add https if not present
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       url = 'https://' + url;
@@ -214,14 +172,11 @@ class WinstonScraper {
       throw new Error('Please enter a valid URL (e.g., https://example.com)');
     }
     
-    const response = await fetch('/api/scrape', {
+    const apiUrl = this.config.apiBaseUrl ? `${this.config.apiBaseUrl}/api/scrape` : '/api/scrape';
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        url,
-        searchDepth: options.searchDepth || this.config.searchDepth,
-        qualityFilter: options.qualityFilter || this.config.qualityFilter
-      })
+      body: JSON.stringify({ url })
     });
     
     if (!response.ok) {

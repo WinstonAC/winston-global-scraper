@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { load } from 'cheerio';
 import puppeteer from 'puppeteer-core';
+import { defaultRateLimit } from '../utils/rateLimit.js';
 
 const tagRules = [
   { tag: "Women in STEM",        re: /women in stem/i },
@@ -205,6 +206,17 @@ async function scrapeKeyword(browser, keyword) {
 }
 
 export default async function handler(req, res) {
+  // 🔒 HTTP METHOD RESTRICTION - Only allow POST for batch scraping
+  if (req.method !== 'POST') {
+    return res.status(405).json({ 
+      error: 'Method not allowed', 
+      message: 'Only POST requests are allowed for this endpoint' 
+    });
+  }
+  
+  // 🔒 Apply rate limiting
+  defaultRateLimit(req, res);
+  
   let browser;
   
   try {

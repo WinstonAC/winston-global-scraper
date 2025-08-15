@@ -2,6 +2,7 @@ import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
 import fs from 'fs';
 import path from 'path';
+import { defaultRateLimit } from '../utils/rateLimit.js';
 
 // 🚀 ENHANCED PHONE VALIDATION - Filter out timestamps and invalid numbers
 function validatePhoneNumber(phone) {
@@ -126,7 +127,19 @@ function findContactName($, firstEmail, targetUrl) {
   return { name: name || '', jobTitle: jobTitle || '' };
 }
 
+// 🔒 HTTP METHOD RESTRICTION
 export default async function handler(req, res) {
+  // Only allow POST requests
+  if (req.method !== 'POST') {
+    return res.status(405).json({ 
+      error: 'Method not allowed', 
+      message: 'Only POST requests are allowed for this endpoint' 
+    });
+  }
+  
+  // 🔒 Apply rate limiting
+  defaultRateLimit(req, res);
+  
   let browser;
   let keyword;
   

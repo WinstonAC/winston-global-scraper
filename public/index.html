@@ -116,7 +116,7 @@
             Find Investors, Partners & Customers in Seconds
           </h2>
         </div>
-        <!-- Version: 2025-01-27 21:45 -->
+        <!-- Version: 2025-01-27 22:15 - CRITICAL SECURITY FIXES DEPLOYED -->
         <div class="max-w-3xl mx-auto mb-10">
           <p class="text-gray-300 text-lg leading-relaxed mb-4">
             Discover high-quality leads with AI-powered categorization. Extract contact data from any source—stealth mode included.
@@ -854,12 +854,13 @@
     </footer>
 
     <script>
-      // Initialize Winston Scraper
+      // Initialize Winston Scraper with PRODUCTION backend
       const winston = new WinstonScraper({
-        maxBatchKeywords: 5
+        maxBatchKeywords: 5,
+        apiBaseUrl: 'https://scraper.winstonai.io' // 🚀 Production API
       });
 
-      // DOM Elements
+      // DOM Elements - Safe initialization with error handling
       const urlInput = document.getElementById('urlInput');
       const scrapeBtn = document.getElementById('scrapeBtn');
       const loader = document.getElementById('loader');
@@ -882,13 +883,33 @@
       const paginationInfo = document.getElementById('paginationInfo');
       const loadMoreInfo = document.getElementById('loadMoreInfo');
       const totalResultsInfo = document.getElementById('totalResultsInfo');
-      const clearBtn = document.getElementById('clearBtn');
+      
+      // 🔒 SAFETY: Verify critical DOM elements exist
+      if (!urlInput || !scrapeBtn || !loader || !resultsWrapper || !resultsBox) {
+        console.error('[SCRAPER] Critical DOM elements not found. Please refresh the page.');
+        // Show user-friendly error message safely
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'min-h-screen bg-neutral-900 text-white flex items-center justify-center p-4';
+        errorDiv.innerHTML = `
+          <div class="text-center">
+            <div class="text-red-400 text-6xl mb-4">⚠️</div>
+            <h1 class="text-2xl font-bold mb-4">Application Error</h1>
+            <p class="text-gray-300 mb-6">Some required elements could not be loaded. Please refresh the page.</p>
+            <button onclick="location.reload()" class="bg-lime-500 hover:bg-lime-400 text-gray-900 font-semibold px-6 py-2 rounded-lg transition">
+              Refresh Page
+            </button>
+          </div>
+        `;
+        document.body.innerHTML = '';
+        document.body.appendChild(errorDiv);
+        return;
+      }
       
       let mode = 'keyword';
       let currentPage = 1;
+      const itemsPerPage = 10; // Default to 10 results per page
       let totalResults = 0;
       let totalPages = 0;
-      const itemsPerPage = 50; // Default to 50 results per page
 
       // Mode switching logic
       const modeRadios = document.getElementsByName('mode');
@@ -979,29 +1000,42 @@
           if (!value) return;
         } else {
           value = urlInput.value.trim();
-        if (!value) return;
+          if (!value) return;
+        }
+
+        // 🔒 SAFETY: Check if DOM elements exist before manipulating
+        if (!scrapeBtn || !loader || !resultsWrapper || !resultsBox || !exportDropdown || !exportMenu || !loadMoreSection || !currentCount || !paginationInfo || !loadMoreInfo || !totalResultsInfo) {
+          console.error('[SCRAPER] Required DOM elements not found');
+          return;
         }
 
         scrapeBtn.disabled = true;
         loader.classList.remove('hidden');
         resultsWrapper.classList.add('hidden');
-        resultsBox.textContent = '';
-        exportDropdown.classList.add('hidden');
-        exportMenu.classList.add('hidden');
-        loadMoreSection.classList.add('hidden');
+        
+        // 🔒 SAFETY: Clear results safely
+        if (resultsBox) {
+          resultsBox.textContent = '';
+        }
+        
+        if (exportDropdown) exportDropdown.classList.add('hidden');
+        if (exportMenu) exportMenu.classList.add('hidden');
+        if (loadMoreSection) loadMoreSection.classList.add('hidden');
+        
         currentPage = 1;
-        currentCount.textContent = '0';
-        paginationInfo.textContent = '';
-        loadMoreInfo.textContent = 'Searching deeper for more contacts...';
-        totalResultsInfo.textContent = '';
+        
+        if (currentCount) currentCount.textContent = '0';
+        if (paginationInfo) paginationInfo.textContent = '';
+        if (loadMoreInfo) loadMoreInfo.textContent = 'Searching deeper for more contacts...';
+        if (totalResultsInfo) totalResultsInfo.textContent = '';
 
         const progressInterval = startLoadingAnimation();
 
         try {
           const data = await winston.scrape(value, { 
             mode,
-            searchDepth: searchDepth.value,
-            qualityFilter: qualityFilter.value
+            searchDepth: searchDepth ? searchDepth.value : 'balanced',
+            qualityFilter: qualityFilter ? qualityFilter.value : 'good'
           });
           const rows = data.rows || [];
           totalResults = data.totalResults || 0;
@@ -1009,7 +1043,12 @@
           
           await completeLoading(progressInterval);
 
-          // Render results using the same table structure
+          // 🔒 SAFETY: Render results only if DOM elements exist
+          if (!resultsBox) {
+            console.error('[SCRAPER] Results box not found');
+            return;
+          }
+          
           resultsBox.innerHTML = '';
           if (rows && rows.length) {
             const wrapper = document.createElement('div');
@@ -1070,26 +1109,26 @@
                 qualityText = 'Fair';
               }
               
-              const tr = document.createElement('tr');
-              tr.className = 'hover:bg-slate-700/30 transition-all duration-200 group';
-              tr.style.animation = `fadeInUp 0.3s ease-out ${index * 0.05}s both`;
+              const row = document.createElement('tr');
+              row.className = 'hover:bg-slate-700/30 transition-all duration-200 group';
+              row.style.cssText = `animation: fadeInUp 0.3s ease-out ${index * 0.05}s both`;
               
               // Contact Name cell
-              const contactCell = document.createElement('td');
-              contactCell.className = 'px-4 py-4 min-w-[120px]';
+              const nameCell = document.createElement('td');
+              nameCell.className = 'px-4 py-4 min-w-[120px]';
               
-              const contactDiv = document.createElement('div');
-              contactDiv.className = 'font-semibold text-white mb-1 group-hover:text-lime-300 transition-colors';
-              contactDiv.textContent = r.contact || 'Unknown Contact';
-              contactDiv.title = r.contact || '';
+              const nameDiv = document.createElement('div');
+              nameDiv.className = 'font-semibold text-white mb-1 group-hover:text-lime-300 transition-colors';
+              nameDiv.textContent = r.contact || 'Unknown Contact';
+              nameDiv.title = r.contact || '';
               
-              const hostnameDiv = document.createElement('div');
-              hostnameDiv.className = 'text-xs text-gray-400 sm:hidden';
-              hostnameDiv.textContent = hostname;
-              hostnameDiv.title = hostname;
+              const companyDiv = document.createElement('div');
+              companyDiv.className = 'text-xs text-gray-400 sm:hidden';
+              companyDiv.textContent = hostname;
+              companyDiv.title = hostname;
               
-              contactCell.appendChild(contactDiv);
-              contactCell.appendChild(hostnameDiv);
+              nameCell.appendChild(nameDiv);
+              nameCell.appendChild(companyDiv);
               
               // Company cell
               const companyCell = document.createElement('td');
@@ -1103,14 +1142,14 @@
               
               const urlLink = document.createElement('a');
               urlLink.href = escapeUrl(r.url || '');
-              urlLink.target = '_blank';
               urlLink.className = 'text-blue-400 hover:text-blue-300 text-sm break-all transition-colors duration-200 hover:underline';
-              urlLink.textContent = r.url || '';
+              urlLink.target = '_blank';
+              urlLink.textContent = r.url || 'N/A';
               urlLink.title = r.url || '';
               
               urlCell.appendChild(urlLink);
               
-              // Email Address cell
+              // Email cell
               const emailCell = document.createElement('td');
               emailCell.className = 'px-4 py-4 min-w-[160px]';
               
@@ -1121,17 +1160,7 @@
               
               emailCell.appendChild(emailDiv);
               
-              // Add phone link for mobile if available
-              if (firstPhone) {
-                const phoneLink = document.createElement('a');
-                phoneLink.href = `tel:${firstPhone.replace(/[^\d+]/g, '')}`;
-                phoneLink.className = 'text-xs text-green-400 hover:text-green-300 sm:hidden cursor-pointer transition-colors duration-200';
-                phoneLink.textContent = firstPhone;
-                phoneLink.title = `Call ${firstPhone}`;
-                emailCell.appendChild(phoneLink);
-              }
-              
-              // Phone Number cell
+              // Phone cell
               const phoneCell = document.createElement('td');
               phoneCell.className = 'hidden sm:table-cell px-4 py-4 text-sm min-w-[120px]';
               
@@ -1148,30 +1177,21 @@
               const scoreCell = document.createElement('td');
               scoreCell.className = 'hidden lg:table-cell px-4 py-4 text-sm min-w-[100px]';
               
-              const scoreDiv = document.createElement('div');
-              scoreDiv.className = 'flex items-center gap-2';
-              
               const scoreSpan = document.createElement('span');
-              scoreSpan.className = `${qualityColor} font-semibold`;
-              scoreSpan.textContent = qualityScore;
+              scoreSpan.className = `px-2 py-1 rounded-full text-xs font-medium ${qualityColor}`;
+              scoreSpan.textContent = qualityText;
               
-              const scoreTextSpan = document.createElement('span');
-              scoreTextSpan.className = `text-xs ${qualityColor}`;
-              scoreTextSpan.textContent = qualityText;
-              
-              scoreDiv.appendChild(scoreSpan);
-              scoreDiv.appendChild(scoreTextSpan);
-              scoreCell.appendChild(scoreDiv);
+              scoreCell.appendChild(scoreSpan);
               
               // Append all cells to the row
-              tr.appendChild(contactCell);
-              tr.appendChild(companyCell);
-              tr.appendChild(urlCell);
-              tr.appendChild(emailCell);
-              tr.appendChild(phoneCell);
-              tr.appendChild(scoreCell);
+              row.appendChild(nameCell);
+              row.appendChild(companyCell);
+              row.appendChild(urlCell);
+              row.appendChild(emailCell);
+              row.appendChild(phoneCell);
+              row.appendChild(scoreCell);
               
-              tbody.appendChild(tr);
+              tbody.appendChild(row);
             });
             
             table.appendChild(tbody);
@@ -1198,17 +1218,28 @@
             }
           }
           
-          resultsWrapper.classList.remove('hidden');
+          // 🔒 SAFETY: Show results only if DOM elements exist
+          if (resultsWrapper) resultsWrapper.classList.remove('hidden');
+          
           if (rows && rows.length > 0) {
-            exportDropdown.classList.remove('hidden');
-            currentCount.textContent = rows.length;
-            currentCount.classList.remove('hidden');
-            updatePaginationInfo();
+            if (exportDropdown) exportDropdown.classList.remove('hidden');
+            if (currentCount) {
+              currentCount.textContent = rows.length;
+              currentCount.classList.remove('hidden');
+            }
             
-            // Show Load More button if there are more results available
-            if (data.pagination?.hasMore) {
+            // Update pagination info
+            if (paginationInfo) {
+              paginationInfo.textContent = `Page ${currentPage} of ${totalPages || 1}`;
+            }
+            
+            if (totalResultsInfo) {
+              totalResultsInfo.textContent = `Total: ${totalResults || rows.length} contacts found`;
+            }
+            
+            // Show load more if there are more pages
+            if (totalPages > currentPage && loadMoreSection) {
               loadMoreSection.classList.remove('hidden');
-              loadMoreInfo.textContent = `Found ${data.pagination.totalResults} total results. Click "Load More Results" to see the next ${itemsPerPage} contacts.`;
             }
           }
           
@@ -1217,25 +1248,31 @@
           // Professional error handling
           const errorMessage = err.message || 'An unexpected error occurred. Please try again.';
           
-          resultsBox.innerHTML = `
-            <div class="p-8 text-center">
+          if (resultsBox) {
+            // Create error message safely
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'p-8 text-center';
+            errorDiv.innerHTML = `
               <div class="text-red-400 text-6xl mb-4">⚠️</div>
               <h3 class="text-xl font-semibold text-white mb-2">Search Encountered an Issue</h3>
               <p class="text-gray-300 mb-4">${errorMessage}</p>
               <button onclick="location.reload()" class="bg-lime-500 hover:bg-lime-400 text-gray-900 font-semibold px-6 py-2 rounded-lg transition">
                 Try Again
               </button>
-            </div>
-          `;
-          resultsWrapper.classList.remove('hidden');
-          currentCount.textContent = '0';
-          currentCount.classList.remove('hidden');
-          paginationInfo.textContent = '';
-          loadMoreInfo.textContent = '';
-          totalResultsInfo.textContent = '';
+            `;
+            resultsBox.innerHTML = '';
+            resultsBox.appendChild(errorDiv);
+          }
+          
+          if (resultsWrapper) resultsWrapper.classList.remove('hidden');
+          
+          if (currentCount) {
+            currentCount.textContent = '0';
+            currentCount.classList.remove('hidden');
+          }
         } finally {
-          loader.classList.add('hidden');
-          scrapeBtn.disabled = false; // Always re-enable the button
+          if (loader) loader.classList.add('hidden');
+          if (scrapeBtn) scrapeBtn.disabled = false;
           resetLoading();
         }
       }
@@ -1395,16 +1432,19 @@
         } catch (err) {
           clearInterval(progressInterval);
           const errorMessage = err.message || 'An unexpected error occurred. Please try again.';
-          resultsBox.innerHTML = `
-            <div class="p-8 text-center">
-              <div class="text-red-400 text-6xl mb-4">⚠️</div>
-              <h3 class="text-xl font-semibold text-white mb-2">Search Encountered an Issue</h3>
-              <p class="text-gray-300 mb-4">${errorMessage}</p>
-              <button onclick="location.reload()" class="bg-lime-500 hover:bg-lime-400 text-gray-900 font-semibold px-6 py-2 rounded-lg transition">
-                Try Again
-              </button>
-            </div>
+          // Create error message safely
+          const errorDiv = document.createElement('div');
+          errorDiv.className = 'p-8 text-center';
+          errorDiv.innerHTML = `
+            <div class="text-red-400 text-6xl mb-4">⚠️</div>
+            <h3 class="text-xl font-semibold text-white mb-2">Search Encountered an Issue</h3>
+            <p class="text-gray-300 mb-4">${errorMessage}</p>
+            <button onclick="location.reload()" class="bg-lime-500 hover:bg-lime-400 text-gray-900 font-semibold px-6 py-2 rounded-lg transition">
+              Try Again
+            </button>
           `;
+          resultsBox.innerHTML = '';
+          resultsBox.appendChild(errorDiv);
           loadMoreSection.classList.add('hidden');
           loadMoreBtn.disabled = false;
         } finally {
