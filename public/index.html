@@ -117,7 +117,7 @@
             Find Investors, Partners & Customers in Seconds
           </h2>
         </div>
-        <!-- Version: 2025-01-27 22:45 - CACHE BUSTING + ERROR FIXES DEPLOYED -->
+        <!-- Version: 2025-01-27 23:00 - CRITICAL SYNTAX ERRORS FIXED -->
         <div class="max-w-3xl mx-auto mb-10">
           <p class="text-gray-300 text-lg leading-relaxed mb-4">
             Discover high-quality leads with AI-powered categorization. Extract contact data from any source—stealth mode included.
@@ -869,12 +869,11 @@
         e.preventDefault();
       });
       
-      try {
-        // Initialize Winston Scraper with PRODUCTION backend
-        const winston = new WinstonScraper({
-          maxBatchKeywords: 5,
-          apiBaseUrl: 'https://scraper.winstonai.io' // 🚀 Production API
-        });
+      // Initialize Winston Scraper with PRODUCTION backend
+      const winston = new WinstonScraper({
+        maxBatchKeywords: 5,
+        apiBaseUrl: 'https://scraper.winstonai.io' // 🚀 Production API
+      });
 
       // DOM Elements - Safe initialization with error handling
       const urlInput = document.getElementById('urlInput');
@@ -1777,31 +1776,6 @@ Best regards,
           // If URL parsing fails, return safe fallback
           console.warn('[SECURITY] Invalid URL blocked:', url);
           return '#';
-        }
-      }
-      
-      } catch (error) {
-        // 🔒 CATCH ANY SCRIPT INITIALIZATION ERRORS
-        console.error('[SCRAPER] Script initialization error:', error);
-        
-        // Show user-friendly error message
-        const errorDiv = document.createElement('div');
-        errorDiv.className = 'min-h-screen bg-neutral-900 text-white flex items-center justify-center p-4';
-        errorDiv.innerHTML = `
-          <div class="text-center">
-            <div class="text-red-400 text-6xl mb-4">⚠️</div>
-            <h1 class="text-2xl font-bold mb-4">Script Error</h1>
-            <p class="text-gray-300 mb-6">There was an error initializing the scraper. Please refresh the page.</p>
-            <button onclick="location.reload()" class="bg-lime-500 hover:bg-lime-400 text-gray-900 font-semibold px-6 py-2 rounded-lg transition">
-              Refresh Page
-            </button>
-          </div>
-        `;
-        
-        // Only show error if body exists and doesn't already have error
-        if (document.body && !document.body.querySelector('.min-h-screen')) {
-          document.body.innerHTML = '';
-          document.body.appendChild(errorDiv);
         }
       }
     </script>
