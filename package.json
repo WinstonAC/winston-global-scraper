@@ -1,6 +1,6 @@
 {
     "name": "winston-global-scraper",
-    "version": "1.0.0",
+    "version": "2.0.0",
     "description": "Scrapes Google for orgs and mentors using Puppeteer. Winston-themed UI. Outputs to CSV.",
     "main": "api/scrape.js",
     "type": "module",
